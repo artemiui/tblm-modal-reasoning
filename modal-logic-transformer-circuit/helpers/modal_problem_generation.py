@@ -57,6 +57,14 @@ BOX_token = prop_var_range + special_counter
 special_counter += 1
 DIAMOND_token = prop_var_range + special_counter
 special_counter += 1
+PROBABLY_token = prop_var_range + special_counter
+special_counter += 1
+CERTAINLY_token = prop_var_range + special_counter
+special_counter += 1
+UNLIKELY_token = prop_var_range + special_counter
+special_counter += 1
+XOR_token = prop_var_range + special_counter
+special_counter += 1
 ACCESS_START_token = prop_var_range + special_counter
 special_counter += 1
 ACCESS_END_token = prop_var_range + special_counter
@@ -72,6 +80,7 @@ special_counter += 1
 special_token_dict = {
     "CONJ": CONJ_token,
     "DISJ": DISJ_token,
+    "XOR": XOR_token,
     "NEGAT": NEGAT_token,
     "IF": IF_token,
     "THEN": THEN_token,
@@ -90,6 +99,9 @@ special_token_dict = {
     "EOS": EOS_token,
     "BOX": BOX_token,
     "DIAMOND": DIAMOND_token,
+    "PROBABLY": PROBABLY_token,
+    "CERTAINLY": CERTAINLY_token,
+    "UNLIKELY": UNLIKELY_token,
     "ACCESS_START": ACCESS_START_token,
     "ACCESS_END": ACCESS_END_token,
     "W0": W0_token,
@@ -117,9 +129,13 @@ integer_to_english_letters = {
     SEMICOLON_token: ";",
     DISJ_token: "or",
     CONJ_token: "and",
+    XOR_token: "xor",
     SEP_token: ".",
     BOX_token: "necessarily",
     DIAMOND_token: "possibly",
+    PROBABLY_token: "probably",
+    CERTAINLY_token: "certainly",
+    UNLIKELY_token: "unlikely",
     ACCESS_START_token: "ACCESS_START",
     ACCESS_END_token: "ACCESS_END",
     W0_token: "w0",
@@ -166,20 +182,23 @@ def sample_modal_chain(
     else:
         rules = [rule_lin, rule_modal]
 
-    if operator == "BOX":
-        p_in_acc = True
-        if "w0" in accessible_worlds and truth_p_w0 != "TRUE":
-            p_in_acc = False
-        if "w1" in accessible_worlds and truth_p_w1 != "TRUE":
-            p_in_acc = False
-        modal_conclusion_truth = "TRUE" if p_in_acc else "UNDETERMINED"
-    else:
-        p_in_acc = False
-        if "w0" in accessible_worlds and truth_p_w0 == "TRUE":
-            p_in_acc = True
-        if "w1" in accessible_worlds and truth_p_w1 == "TRUE":
-            p_in_acc = True
-        modal_conclusion_truth = "TRUE" if p_in_acc else "UNDETERMINED"
+    acc_truths = []
+    if "w0" in accessible_worlds:
+        acc_truths.append(truth_p_w0 == "TRUE")
+    if "w1" in accessible_worlds:
+        acc_truths.append(truth_p_w1 == "TRUE")
+
+    n_acc = len(acc_truths)
+    n_true = sum(acc_truths)
+
+    if operator in {"BOX", "CERTAINLY"}:
+        modal_conclusion_truth = "TRUE" if (n_acc > 0 and n_true == n_acc) else "UNDETERMINED"
+    elif operator == "PROBABLY":
+        modal_conclusion_truth = "TRUE" if (n_acc > 0 and (n_true / n_acc) > 0.5) else "UNDETERMINED"
+    elif operator == "UNLIKELY":
+        modal_conclusion_truth = "TRUE" if (n_acc > 0 and (n_true / n_acc) < 0.5) else "UNDETERMINED"
+    else:  # DIAMOND
+        modal_conclusion_truth = "TRUE" if (n_acc > 0 and n_true > 0) else "UNDETERMINED"
 
     lin_conclusion_truth = "TRUE" if truth_r_w0 == "TRUE" else "UNDETERMINED"
 
@@ -366,3 +385,37 @@ def generate_cot_question_accessibility_based(length_of_chain: int = 2, num_cot_
     _, gt_1 = convert_to_english(ans_1, is_question=False)
 
     return f"{examples_str}\n{prompt_2}", gt_2, f"{examples_str}\n{prompt_1}", gt_1, s_acc2, s_acc1
+
+
+def generate_cot_question_graded_operator_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
+    """Generate counterfactual pair contrasting 'probably' (majority) vs 'certainly' (all)."""
+    examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
+    s_prob, _ = sample_modal_chain(depth=length_of_chain, operator="PROBABLY", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
+    s_cert, _ = sample_modal_chain(depth=length_of_chain, operator="CERTAINLY", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
+
+    ctx_p, ans_p, _ = generate_modal_sample_tokens(s_prob)
+    ctx_c, ans_c, _ = generate_modal_sample_tokens(s_cert)
+
+    _, prompt_p = convert_to_english(ctx_p)
+    _, prompt_c = convert_to_english(ctx_c)
+    _, gt_p = convert_to_english(ans_p, is_question=False)
+    _, gt_c = convert_to_english(ans_c, is_question=False)
+
+    return f"{examples_str}\n{prompt_p}", gt_p, f"{examples_str}\n{prompt_c}", gt_c, s_prob, s_cert
+
+
+def generate_cot_question_connective_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
+    """Generate counterfactual pair contrasting disjunctive 'or' vs conjunctive 'and' rules."""
+    examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
+    s_or, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
+    s_and, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
+
+    ctx_o, ans_o, _ = generate_modal_sample_tokens(s_or)
+    ctx_a, ans_a, _ = generate_modal_sample_tokens(s_and)
+
+    _, prompt_o = convert_to_english(ctx_o)
+    _, prompt_a = convert_to_english(ctx_a)
+    _, gt_o = convert_to_english(ans_o, is_question=False)
+    _, gt_a = convert_to_english(ans_a, is_question=False)
+
+    return f"{examples_str}\n{prompt_o}", gt_o, f"{examples_str}\n{prompt_a}", gt_a, s_or, s_and

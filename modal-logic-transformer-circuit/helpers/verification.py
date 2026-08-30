@@ -101,6 +101,8 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
         "QRLH": [(19, 11), (21, 0), (21, 7), (22, 5), (23, 12)],
         "MOH": [(20, 3), (22, 9), (23, 4)],
         "WAH": [(21, 14), (23, 1), (25, 10)],
+        "CRH": [(20, 5), (22, 11)],
+        "GMH": [(20, 8), (23, 2)],
         "FPH": [(24, 5), (25, 7), (26, 0), (26, 12)],
         "QRMH": [(20, 7), (23, 6), (24, 15), (27, 15)],
         "DH": [(28, 12), (30, 9)],
@@ -110,6 +112,8 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
         "QRLH": slice(None),
         "MOH": slice(None),
         "WAH": slice(None),
+        "CRH": slice(None),
+        "GMH": slice(None),
         "FPH": slice(None),
         "QRMH": slice(None),
         "DH": slice(None),
@@ -124,6 +128,14 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
     elif circuit_option == "no_wah":
         c = dict(base_circuit)
         c["WAH"] = []
+        return c, seq_pos_to_keep
+    elif circuit_option == "no_crh":
+        c = dict(base_circuit)
+        c["CRH"] = []
+        return c, seq_pos_to_keep
+    elif circuit_option == "no_gmh":
+        c = dict(base_circuit)
+        c["GMH"] = []
         return c, seq_pos_to_keep
     elif circuit_option == "no_qrlh":
         c = dict(base_circuit)

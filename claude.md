@@ -7,13 +7,13 @@ This project extends two foundational mechanistic-interpretability studies of pr
 1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**:
    - Reference Paper: *A Implies B: Circuit Analysis in LLMs for Propositional Logical Reasoning* (NeurIPS 2025).
    - Reference Repository: `prop-logic-transformer-circuit-main/`.
-   - Core Mechanism: Controlled Mediation Analysis (CMA) circuit discovery, identifying functional attention head families (`QRLH`, `QRMH`, `FPH`, `DH`) plus novel modal-specific families: **Modal-Operator Heads (MOH)** and **World-Accessibility Heads (WAH)**.
+   - Core Mechanism: Controlled Mediation Analysis (CMA) circuit discovery, identifying functional attention head families (`QRLH`, `QRMH`, `FPH`, `DH`) plus novel modal and connective families: **Modal-Operator Heads (MOH)**, **World-Accessibility Heads (WAH)**, **Connective-Resolving Heads (CRH)**, and **Graded-Modal Heads (GMH)**.
    - Evaluated Models: `Mistral-7B-Instruct-v0.2`, `Gemma-2-9B-it`, `Gemma-2-27B-it`.
 
 2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**:
    - Reference Paper: *Towards a Mechanistic Understanding of Propositional Logical Reasoning in Large Language Models* (2026).
    - Reference Repository: `anomy_repo_CDSW74VD/`.
-   - Core Mechanism: Macroscopic pattern analysis including 4-region staged computation (Facts, **Accessibility**, Expression, Query), residual-stream information transmission with accessibility boundary tokens, selective fact retrospection (accessible vs. inaccessible contrast), and specialized attention head taxonomy (including **Accessibility-Filtering Heads**).
+   - Core Mechanism: Macroscopic pattern analysis including 4-region staged computation (Facts, **Accessibility**, Expression, Query), residual-stream information transmission with accessibility boundary and operator tokens, selective fact retrospection (accessible vs. inaccessible contrast), and specialized attention head taxonomy (including **Accessibility-Filtering Heads** across 10 rule categories).
    - Evaluated Models: `Qwen/Qwen3-8B`, `Qwen/Qwen3-14B`.
 
 ---
@@ -33,8 +33,8 @@ modal-logic-mi/
 |   |-- part_b_qwen14b.yaml        # Part B config for Qwen3-14B
 |   \-- calibration_proplogic.yaml # Propositional baseline calibration
 |-- data/
-|   |-- modal_circuit/             # Part A controlled counterfactual prompt pairs
-|   \-- modal_mi/                  # Part B 1-hop & 2-hop ModalLogic-MI datasets
+|   |-- modal_circuit/             # Part A 7 controlled counterfactual prompt pair sets
+|   \-- modal_mi/                  # Part B 1-hop & 2-hop ModalLogic-MI 10-category datasets
 |-- results/
 |   |-- part_a/{model}/            # Discovered circuits, sufficiency tables, findings.md
 |   \-- part_b/{model}/            # MLP staging, retrospection contrast, findings.md
@@ -46,11 +46,11 @@ modal-logic-mi/
 |   \-- run_smoke_tests.sh         # Test suite runner
 |-- src/
 |   |-- data_gen/
-|   |   |-- modal_grammar.py       # Kripke semantics, AST, recursive evaluator, few-shot prompts
-|   |   |-- circuit_pairs.py       # 5 Part A controlled counterfactual pairing functions
+|   |   |-- modal_grammar.py       # Kripke semantics, Graded Modals (probably/certainly), AST, evaluators
+|   |   |-- circuit_pairs.py       # 7 Part A controlled counterfactual pairing functions
 |   |   |-- corruptions.py         # Minimal fact & accessibility edge label-flipping corruptions
 |   |   |-- formatters.py          # 4-region prompt formatting (facts, access, expr, query)
-|   |   |-- mi_pairs.py            # 7 Modal rule categories with dual-corruption modes
+|   |   |-- mi_pairs.py            # 10 Modal rule categories with dual-corruption modes
 |   |   \-- generate_dataset.py    # Dataset generation CLI entrypoint
 |   |-- patching/
 |   |   |-- activation_patch.py    # Hook engine (residual, MLP, attn head, Q/K/V, complement patching)
@@ -58,7 +58,7 @@ modal-logic-mi/
 |   |   \-- cma.py                 # Controlled Mediation Analysis necessity and sufficiency engines
 |   |-- circuits/
 |   |   |-- head_discovery.py      # Layer x Head CMA necessity sweep
-|   |   |-- head_classify.py       # Classification into QRLH, QRMH, FPH, DH, MOH, WAH
+|   |   |-- head_classify.py       # Classification into QRLH, QRMH, FPH, DH, MOH, WAH, CRH, GMH
 |   |   |-- sufficiency_table.py   # Sufficiency ablation table exporter (CSV, MD, LaTeX)
 |   |   \-- run.py                 # Part A CLI entrypoint
 |   |-- staged/
@@ -74,7 +74,7 @@ modal-logic-mi/
 |   |-- model_loading.py           # HookedTransformer universal loader with GQA support
 |   |-- plot_style.py              # Consistent publication matplotlib styling
 |   \-- progress.py                # Structured logging and progress utilities
-|-- tests/                         # Unit and integration test suite
+|-- tests/                         # Unit and integration test suite (22 tests)
 |-- requirements.txt
 \-- README.md
 ```
@@ -92,10 +92,10 @@ modal-logic-transformer-circuit/
 |   \-- world_accessibility_heads.png
 |-- helpers/
 |   |-- __init__.py
-|   |-- modal_problem_generation.py # Kripke frame generator & 5 counterfactual pair modes
+|   |-- modal_problem_generation.py # Kripke frame generator & 7 counterfactual pair modes
 |   |-- patching_helpers_custom.py  # Activation patching with GQA handling & calibrated logit metrics
 |   |-- attn_analysis_helpers.py    # Region/marker finders, clause spans & negative control check
-|   \-- verification.py             # Complement patching hooks & family ablation specifications
+|   \-- verification.py             # Complement patching hooks & family ablation specifications (incl. CRH/GMH)
 |-- scripts/
 |   |-- run_patching_sweep.py       # CLI runner for CMA necessity sweep
 |   |-- run_attention_analysis.py   # CLI runner for attention mass & negative control verification
@@ -105,7 +105,7 @@ modal-logic-transformer-circuit/
 |   |-- test_patching_metrics.py
 |   |-- test_attn_spans.py
 |   |-- test_verification_masks.py
-|   \-- run_all.py
+|   \-- run_all.py                  # All unit tests (11 tests)
 |-- transformer_lens/               # Bundled TransformerLens package
 |-- requirements.txt
 \-- README.md
@@ -113,25 +113,28 @@ modal-logic-transformer-circuit/
 
 ---
 
-## 3. Part A: Circuit Discovery (Hong et al. 2025 Adaptation)
+## 3. Part A: Circuit Discovery (Hong et al. 2025 Adaptation + Graded & Connective Extensions)
 
 ### A1. Modal Kripke Grammar & Token Formatting
 - Evaluates propositions under a Kripke frame $\mathcal{M} = \langle W, R, V \rangle$ where $W = \{w_0, w_1, \dots\}$, $R \subseteq W \times W$.
+- Supports crisp modalities ($\Box, \Diamond$), graded epistemic modalities (`probably`, `certainly`, `unlikely`), and multi-arity Boolean connectives (`and`, `or`, `xor`, `iff`, `not`).
 - Prompt Format:
   - Accessibility Clause: `ACCESS_START w0 w1 ACCESS_END` (or `From w0, accessible worlds are [w0, w1].`).
   - World Facts: `In world w0: P is True, Q is False. In world w1: P is True, Q is True.`
   - Rules: `[Rule 1] necessarily P implies Q. [Rule 2] R implies S.`
   - Query: `Query: Is Q necessarily true from w0?`
   - Answer: `Answer: True.`
-- Few-shot sets: 4-shot for Mistral-7B, 6-shot for Gemma-2 (Hong et al. ?B.1).
+- Few-shot sets: 4-shot for Mistral-7B, 6-shot for Gemma-2 (Hong et al. §B.1).
 
-### A2. 5 Controlled Counterfactual Pairing Regimes
+### A2. 7 Controlled Counterfactual Pairing Regimes
 Strict byte-identical counterfactual surgeries (`src/data_gen/circuit_pairs.py` & `helpers/modal_problem_generation.py`):
 1. `query_flip`: Flips QUERY variable between modal conclusion and linear distractor conclusion.
 2. `modal_operator_flip`: Flips $\Box \leftrightarrow \Diamond$ while holding facts and accessibility identical.
 3. `accessibility_flip`: Modifies accessibility relation (e.g. $w_0 \to \{w_0, w_1\}$ vs $w_0 \to \{w_0\}$).
 4. `fact_flip`: Flips fact truth value in a fixed world.
 5. `rule_location_swap`: Swaps textual ordering of modal rule and linear rule.
+6. `graded_operator_flip`: Flips between `probably` (>50% worlds) $\leftrightarrow$ `certainly` (100% worlds).
+7. `connective_flip`: Flips Boolean connectives `or` $\leftrightarrow$ `and` under modal context ($\Box(P \lor Q)$ vs $\Box(P \land Q)$).
 
 ### A3. CMA Patching Engine & GQA Support
 - Implements attention-head output patching ($z$) and sub-component ($q, k, v$) patching (`src/patching/activation_patch.py`, `helpers/patching_helpers_custom.py`).
@@ -147,20 +150,22 @@ Strict byte-identical counterfactual surgeries (`src/data_gen/circuit_pairs.py` 
 - **World-Accessibility Heads (WAH)**: High indirect effect under accessibility flips AND satisfies the **negative-control specificity assertion**:
   $$\text{AttnMass}(\text{WAH} \to \text{AccessibleFacts}) \gg \text{AttnMass}(\text{WAH} \to \text{InaccessibleFacts})$$
   (Assertion enforced in code: Inaccessible attention mass $< 0.05$).
+- **Connective-Resolving Heads (CRH)**: High indirect effect under `and` $\leftrightarrow$ `or` connective flips.
+- **Graded-Modal Heads (GMH)**: High indirect effect under `probably` $\leftrightarrow$ `certainly` threshold flips.
 - **Fact-Processing Heads (FPH)**: Retrieve fact truth values in accessible worlds.
 - **Queried-Rule Mover Heads (QRMH)**: Transmit combined premise states to the decision position.
 - **Decision Heads (DH)**: Write final output logits for True vs False.
 
 ### A5. Circuit Sufficiency Ablation
 - Complement patching retaining only circuit heads while ablating the rest (`src/circuits/sufficiency_table.py`, `helpers/verification.py`).
-- Conditions evaluated: Full Circuit ($C$), $C - \text{MOH}$, $C - \text{WAH}$, $C - \text{QRLH}$, $C - \text{QRMH}$, $C - \text{FPH}$, $C - \text{DH}$, Random Baseline.
+- Conditions evaluated: Full Circuit ($C$), $C - \text{MOH}$, $C - \text{WAH}$, $C - \text{CRH}$, $C - \text{GMH}$, $C - \text{QRLH}$, $C - \text{QRMH}$, $C - \text{FPH}$, $C - \text{DH}$, Random Baseline.
 
 ---
 
-## 4. Part B: Macroscopic Mechanistic Principles (Chen et al. 2026 Adaptation)
+## 4. Part B: Macroscopic Mechanistic Principles (Chen et al. 2026 Adaptation + Graded/Connective Extensions)
 
-### B1. ModalLogic-MI 7 Rule Categories
-Generates 1-hop and 2-hop modal logic samples across 7 fundamental categories (`src/data_gen/mi_pairs.py`):
+### B1. ModalLogic-MI 10 Rule Categories
+Generates 1-hop and 2-hop modal logic samples across 10 fundamental categories (`src/data_gen/mi_pairs.py`):
 1. `necessitation_implication`: $\Box(P \to Q)$ under accessibility.
 2. `possibility_implication`: $\Diamond(P \to Q)$ and $\Diamond P \to Q$.
 3. `duality`: $\Box P \leftrightarrow \neg \Diamond \neg P$ and $\Diamond P \leftrightarrow \neg \Box \neg P$.
@@ -168,6 +173,9 @@ Generates 1-hop and 2-hop modal logic samples across 7 fundamental categories (`
 5. `k_axiom`: $\Box(P \to Q) \to (\Box P \to \Box Q)$.
 6. `cross_world_composition`: Multi-hop chained accessibility evaluation ($w_0 \to w_1 \to w_2$).
 7. `modal_commutative_associative`: $\Box(P \land Q) \leftrightarrow \Box P \land \Box Q$, $\Diamond(P \lor Q) \leftrightarrow \Diamond P \lor \Diamond Q$.
+8. `graded_majority`: $\text{probably}(P)$ evaluating majority $>50\%$ truth over 3-world frames.
+9. `epistemic_certainty`: $\text{certainly}(P \to Q)$ evaluating full 100% accessible world certainty.
+10. `connective_disjunction`: $\Box(P \lor Q)$ evaluating disjunctive closure over accessible worlds.
 
 ### B2. 4-Region Staged Computation (`src/staged/mlp_staging.py`)
 - Partitions prompts into 4 functional regions:
@@ -181,6 +189,7 @@ Generates 1-hop and 2-hop modal logic samples across 7 fundamental categories (`
 ### B3. Information Transmission (`src/staged/info_transmission.py`)
 - Token-wise residual-stream patching tracking causal convergence across 9 refined categories:
   `facts_value`, `accessibility_boundary`, `variable_in_facts`, `variable_in_expr`, `operator`, `expr_last`, `derived_assignment`, `query_token`, `others`.
+- Recognizes modal and graded operators (`box`, `diamond`, `necessarily`, `possibly`, `probably`, `certainly`, `unlikely`, `and`, `or`, `xor`, `iff`, `implies`, `not`).
 - Grouped stage bar charts across Early, Middle, and Late layer groups with SEM error bars.
 
 ### B4. Selective Fact Retrospection (`src/staged/fact_retrospection.py`)
@@ -228,10 +237,10 @@ python -m src.staged.run --config configs/part_b_qwen14b.yaml
 
 ### 4. Running Test Suites
 ```bash
-# Run all unit tests for modal-logic-mi
+# Run all unit tests for modal-logic-mi (22 tests)
 python modal-logic-mi/tests/run_all.py
 
-# Run all unit tests for modal-logic-transformer-circuit
+# Run all unit tests for modal-logic-transformer-circuit (11 tests)
 python modal-logic-transformer-circuit/tests/run_all.py
 ```
 
@@ -239,9 +248,10 @@ python modal-logic-transformer-circuit/tests/run_all.py
 
 ## 6. Definition of Done & Quality Checklist
 
-- [x] **Part A Modal Circuit Discovery**: Full pipeline adapted from Hong et al., supporting MOH, WAH (with negative control specificity check), QRLH, QRMH, FPH, DH, GQA handling, and sufficiency tables.
-- [x] **Part B Modal Staged Principles**: Full pipeline adapted from Chen et al., supporting 4-region MLP staging (with Accessibility Region), token-wise transmission, accessible vs. inaccessible fact retrospection contrast, and Accessibility-Filtering Heads.
-- [x] **Standalone High-Fidelity Clone**: `modal-logic-transformer-circuit` created as a self-contained clone of `prop-logic-transformer-circuit-main` with interactive notebook walkthrough.
-- [x] **Negative Controls**: Every modal-specific mechanism (MOH, WAH, Accessibility Region, Accessibility-Filtering Heads) includes explicit negative controls and selectivity ratio metrics.
-- [x] **Unit & Integration Tests**: All unit tests passing across both repositories.
+- [x] **Part A Modal Circuit Discovery**: Full pipeline adapted from Hong et al., supporting MOH, WAH (with negative control specificity check), CRH, GMH, QRLH, QRMH, FPH, DH, GQA handling, and sufficiency tables.
+- [x] **Part B Modal Staged Principles**: Full pipeline adapted from Chen et al., supporting 4-region MLP staging (with Accessibility Region), token-wise transmission, accessible vs. inaccessible fact retrospection contrast, and Accessibility-Filtering Heads across 10 rule categories.
+- [x] **Graded & Connective Modalities (Tier 1)**: Graded probability adverbs (`probably`, `certainly`, `unlikely`) and Boolean connectives under modal context (`and`, `or`, `xor`, `iff`, `not`) fully supported in AST, recursive evaluators, counterfactual pairing, and head classification.
+- [x] **Standalone High-Fidelity Clone**: `modal-logic-transformer-circuit` created as a self-contained clone of `prop-logic-transformer-circuit-main` with interactive notebook walkthrough and Tier 1 prompt support.
+- [x] **Negative Controls**: Every modal-specific mechanism (MOH, WAH, CRH, GMH, Accessibility Region, Accessibility-Filtering Heads) includes explicit negative controls and selectivity ratio metrics.
+- [x] **Unit & Integration Tests**: All 33 unit tests (22 in `modal-logic-mi`, 11 in `modal-logic-transformer-circuit`) passing cleanly.
 - [x] **Documentation & Hygiene**: Complete READMEs, findings reports, requirements, and configuration files provided.

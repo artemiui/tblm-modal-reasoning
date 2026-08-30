@@ -7,14 +7,16 @@ This repository contains a full adaptation and extension of the NeurIPS 2025 pap
 ### About This Work
 We investigate how Large Language Models (`Gemma-2-9B`, `Gemma-2-27B`, and `Mistral-7B-v0.1`) execute modal reasoning over Kripke frames:
 - **Accessibility Constraints**: Evaluating propositions such as $\\Box(P \\to Q)$ or $\\Diamond(P \\to Q)$ under explicit accessibility clauses (e.g. `ACCESS_START w0 w1 ACCESS_END`).
-- **Controlled Mediation Analysis (CMA)**: Conducting strict byte-identical counterfactual surgeries across 5 pairing regimes (`query_flip`, `modal_operator_flip`, `accessibility_flip`, `fact_flip`, `rule_location_swap`).
+- **Controlled Mediation Analysis (CMA)**: Conducting strict byte-identical counterfactual surgeries across 7 pairing regimes (`query_flip`, `modal_operator_flip`, `accessibility_flip`, `fact_flip`, `rule_location_swap`, `graded_operator_flip`, `connective_flip`).
 - **Discovered Attention Head Families**:
   1. **Queried-Rule Locating Heads (QRLH)**: Attend from query to the target modal rule.
   2. **Modal-Operator Heads (MOH)**: Specialize in distinguishing $\\Box$ vs $\\Diamond$ semantics.
-  3. **World-Accessibility Heads (WAH)**: Route information conditionally based on world accessibility, passing the negative-control assertion (near-zero attention mass on inaccessible worlds).
-  4. **Fact-Processing Heads (FPH)**: Retrieve fact truth values in accessible worlds.
-  5. **Queried-Rule Mover Heads (QRMH)**: Transmit combined premise states to the decision layer.
-  6. **Decision Heads (DH)**: Write the final logit prediction to the residual stream.
+  3. **World-Accessibility Heads (WAH)**: Route information conditionally based on world accessibility, passing the negative-control assertion.
+  4. **Connective-Resolving Heads (CRH)**: Specialize in distinguishing Boolean connectives (`and` vs `or`).
+  5. **Graded-Modal Heads (GMH)**: Specialize in distinguishing graded probability thresholds (`probably` vs `certainly`).
+  6. **Fact-Processing Heads (FPH)**: Retrieve fact truth values in accessible worlds.
+  7. **Queried-Rule Mover Heads (QRMH)**: Transmit combined premise states to the decision layer.
+  8. **Decision Heads (DH)**: Write the final logit prediction to the residual stream.
 
 ---
 
@@ -22,12 +24,12 @@ We investigate how Large Language Models (`Gemma-2-9B`, `Gemma-2-27B`, and `Mist
 
 | Component | Status | Details |
 |:---|:---:|:---|
-| **Modal Problem Generation** | **COMPLETE** | Generates Kripke models, accessibility clauses, few-shot prompts (4-shot & 6-shot), and 5 controlled counterfactual pairing functions. |
+| **Modal Problem Generation** | **COMPLETE** | Generates Kripke models, accessibility clauses, few-shot prompts, and 7 controlled counterfactual pairing functions (incl. graded and connective modes). |
 | **Patching Engine & GQA** | **COMPLETE** | Layer-by-head sweep for components ($z, q, k, v$) with GQA mapping (Gemma-2: 2, Mistral-7B: 4). |
 | **Attention Analysis** | **COMPLETE** | Automated marker/clause span extraction and attention statistics with WAH negative control check. |
-| **Circuit Verification** | **COMPLETE** | Complement-patching hooks (`add_ctfl_ablation_hook`) for full circuit and family-wise ablations. |
+| **Circuit Verification** | **COMPLETE** | Complement-patching hooks (`add_ctfl_ablation_hook`) for full circuit and family-wise ablations (incl. CRH & GMH). |
 | **Walkthrough Notebook** | **COMPLETE** | Interactive Jupyter walkthrough in `analysis_walkthrough/` ready for experimentation. |
-| **Test Suite** | **PASSED** | 8/8 unit tests passing covering problem generation, metrics, attention spans, and verification masks. |
+| **Test Suite** | **PASSED** | 11/11 unit tests passing covering problem generation, graded operators, connectives, metrics, attention spans, and verification masks. |
 
 ---
 

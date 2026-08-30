@@ -215,6 +215,79 @@ def rule_location_swap_pairs(rng: random.Random, few_shot_style: str = "4shot") 
     )
 
 
+def graded_operator_flip_pairs(rng: random.Random, few_shot_style: str = "4shot") -> CircuitSamplePair:
+    """Flip graded probability operator 'probably' (majority >50%) <-> 'certainly' (100%)."""
+    frame = KripkeFrame(worlds=["w0", "w1", "w2"], accessibility={"w0": ["w0", "w1", "w2"]})
+    valuation = {
+        "w0": {"P": True, "Q": False, "R": True, "S": False},
+        "w1": {"P": True, "Q": True, "R": False, "S": False},
+        "w2": {"P": False, "Q": False, "R": False, "S": False},
+    }
+    model = KripkeModel(frame, valuation)
+
+    rule1_clean = "probably P"
+    rule1_cf = "certainly P"
+    rule2 = "R implies S"
+
+    query_clean = "Is P probably true from w0?"
+    query_cf = "Is P certainly true from w0?"
+
+    clean_label = True   # 2 of 3 accessible worlds have P=True (>50%)
+    cf_label = False     # not all 3 accessible worlds have P=True (<100%)
+
+    few_shot = FEW_SHOT_4_SHOT_MISTRAL if few_shot_style == "4shot" else (FEW_SHOT_6_SHOT_GEMMA if few_shot_style == "6shot" else "")
+
+    clean_prompt = _build_part_a_prompt(frame, valuation, rule1_clean, rule2, query_clean, few_shot)
+    cf_prompt = _build_part_a_prompt(frame, valuation, rule1_cf, rule2, query_cf, few_shot)
+
+    return CircuitSamplePair(
+        pair_type="graded_operator_flip",
+        clean_prompt=clean_prompt,
+        counterfactual_prompt=cf_prompt,
+        clean_target="True",
+        counterfactual_target="False",
+        clean_label=clean_label,
+        counterfactual_label=cf_label,
+        metadata={"operator_clean": "probably", "operator_cf": "certainly", "p_count": "2_of_3"},
+    )
+
+
+def connective_flip_pairs(rng: random.Random, few_shot_style: str = "4shot") -> CircuitSamplePair:
+    """Flip Boolean connective 'or' <-> 'and' under modal context."""
+    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"]})
+    valuation = {
+        "w0": {"P": True, "Q": False, "R": True, "S": False},
+        "w1": {"P": True, "Q": False, "R": False, "S": False},
+    }
+    model = KripkeModel(frame, valuation)
+
+    rule1_clean = "necessarily P or Q"
+    rule1_cf = "necessarily P and Q"
+    rule2 = "R implies S"
+
+    query_clean = "Is P or Q necessarily true from w0?"
+    query_cf = "Is P and Q necessarily true from w0?"
+
+    clean_label = True   # In all worlds, True or False = True
+    cf_label = False     # In all worlds, True and False = False
+
+    few_shot = FEW_SHOT_4_SHOT_MISTRAL if few_shot_style == "4shot" else (FEW_SHOT_6_SHOT_GEMMA if few_shot_style == "6shot" else "")
+
+    clean_prompt = _build_part_a_prompt(frame, valuation, rule1_clean, rule2, query_clean, few_shot)
+    cf_prompt = _build_part_a_prompt(frame, valuation, rule1_cf, rule2, query_cf, few_shot)
+
+    return CircuitSamplePair(
+        pair_type="connective_flip",
+        clean_prompt=clean_prompt,
+        counterfactual_prompt=cf_prompt,
+        clean_target="True",
+        counterfactual_target="False",
+        clean_label=clean_label,
+        counterfactual_label=cf_label,
+        metadata={"connective_clean": "or", "connective_cf": "and"},
+    )
+
+
 def generate_all_circuit_pairs(n_per_type: int = 60, seed: int = 42, few_shot_style: str = "4shot") -> List[CircuitSamplePair]:
     rng = random.Random(seed)
     generators = [
@@ -223,6 +296,8 @@ def generate_all_circuit_pairs(n_per_type: int = 60, seed: int = 42, few_shot_st
         accessibility_flip_pairs,
         fact_flip_pairs,
         rule_location_swap_pairs,
+        graded_operator_flip_pairs,
+        connective_flip_pairs,
     ]
     all_pairs: List[CircuitSamplePair] = []
     for gen in generators:

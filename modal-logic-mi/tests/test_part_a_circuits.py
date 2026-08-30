@@ -24,6 +24,8 @@ class TestCircuits(unittest.TestCase):
         families = classify_heads(model, candidate_heads, pairs_by_type)
         self.assertIn("MOH", families)
         self.assertIn("WAH", families)
+        self.assertIn("CRH", families)
+        self.assertIn("GMH", families)
         self.assertIn("QRLH", families)
         self.assertIn("QRMH", families)
         self.assertIn("FPH", families)

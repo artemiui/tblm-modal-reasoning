@@ -12,6 +12,12 @@ class TestPartBTokenClassifier(unittest.TestCase):
         self.assertIn("operator", cats)
         self.assertIn("query_token", cats)
 
+        # Verify graded and connective tokens
+        graded_tokens = ["probably", "certainly", "xor"]
+        graded_cats = classify_modal_tokens(graded_tokens)
+        for c in graded_cats:
+            self.assertIn(c, {"operator", "expr_last"})
+
 
 if __name__ == "__main__":
     unittest.main()

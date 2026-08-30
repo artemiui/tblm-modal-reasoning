@@ -7,6 +7,8 @@ class TestVerification(unittest.TestCase):
         circuit, pos = circuit_specification("full")
         self.assertIn("MOH", circuit)
         self.assertIn("WAH", circuit)
+        self.assertIn("CRH", circuit)
+        self.assertIn("GMH", circuit)
         self.assertIn("QRLH", circuit)
         self.assertIn("QRMH", circuit)
         self.assertIn("FPH", circuit)
@@ -14,6 +16,12 @@ class TestVerification(unittest.TestCase):
 
         c_no_moh, _ = circuit_specification("no_moh")
         self.assertEqual(len(c_no_moh["MOH"]), 0)
+
+        c_no_crh, _ = circuit_specification("no_crh")
+        self.assertEqual(len(c_no_crh["CRH"]), 0)
+
+        c_no_gmh, _ = circuit_specification("no_gmh")
+        self.assertEqual(len(c_no_gmh["GMH"]), 0)
 
 
 if __name__ == "__main__":

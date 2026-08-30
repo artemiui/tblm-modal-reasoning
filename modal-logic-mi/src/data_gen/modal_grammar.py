@@ -41,6 +41,11 @@ def Iff(x: Expr, y: Expr) -> Expr:
     return Expr(op="iff", children=(x, y))
 
 
+def Xor(x: Expr, y: Expr) -> Expr:
+    """Exclusive Disjunction operator (XOR)."""
+    return Expr(op="xor", children=(x, y))
+
+
 def Box(x: Expr) -> Expr:
     """Modal Necessity operator (\u25a1)."""
     return Expr(op="box", children=(x,))
@@ -49,6 +54,21 @@ def Box(x: Expr) -> Expr:
 def Diamond(x: Expr) -> Expr:
     """Modal Possibility operator (\u25c7)."""
     return Expr(op="diamond", children=(x,))
+
+
+def Probably(x: Expr) -> Expr:
+    """Graded Epistemic / Modal Probability operator (>50% of accessible worlds)."""
+    return Expr(op="probably", children=(x,))
+
+
+def Certainly(x: Expr) -> Expr:
+    """Graded Epistemic / Modal Certainty operator (100% of accessible worlds)."""
+    return Expr(op="certainly", children=(x,))
+
+
+def Unlikely(x: Expr) -> Expr:
+    """Graded Epistemic / Modal Improbability operator (<50% of accessible worlds)."""
+    return Expr(op="unlikely", children=(x,))
 
 
 @dataclass
@@ -93,19 +113,21 @@ def eval_modal_expr(expr: Expr, model: KripkeModel, current_world: str = "w0") -
     if expr.op == "not":
         return not eval_modal_expr(expr.children[0], model, current_world)
 
-    if expr.op in {"and", "or", "implies", "iff"}:
+    if expr.op in {"and", "or", "xor", "implies", "iff"}:
         left = eval_modal_expr(expr.children[0], model, current_world)
         right = eval_modal_expr(expr.children[1], model, current_world)
         if expr.op == "and":
             return left and right
         if expr.op == "or":
             return left or right
+        if expr.op == "xor":
+            return left != right
         if expr.op == "implies":
             return (not left) or right
         if expr.op == "iff":
             return left == right
 
-    if expr.op == "box":
+    if expr.op in {"box", "certainly"}:
         acc_worlds = model.frame.accessible_from(current_world)
         if not acc_worlds:
             return True  # Vacuously true if no accessible worlds
@@ -116,6 +138,20 @@ def eval_modal_expr(expr: Expr, model: KripkeModel, current_world: str = "w0") -
         if not acc_worlds:
             return False  # False if no accessible worlds
         return any(eval_modal_expr(expr.children[0], model, w) for w in acc_worlds)
+
+    if expr.op == "probably":
+        acc_worlds = model.frame.accessible_from(current_world)
+        if not acc_worlds:
+            return False
+        true_count = sum(1 for w in acc_worlds if eval_modal_expr(expr.children[0], model, w))
+        return (true_count / len(acc_worlds)) > 0.5
+
+    if expr.op == "unlikely":
+        acc_worlds = model.frame.accessible_from(current_world)
+        if not acc_worlds:
+            return True
+        true_count = sum(1 for w in acc_worlds if eval_modal_expr(expr.children[0], model, w))
+        return (true_count / len(acc_worlds)) < 0.5
 
     raise ValueError(f"Unknown operator {expr.op!r}")
 
@@ -150,11 +186,15 @@ def rename_vars(expr: Expr, mapping: Dict[str, str]) -> Expr:
 _PRECEDENCE = {
     "iff": 1,
     "implies": 2,
+    "xor": 3,
     "or": 3,
     "and": 4,
     "not": 5,
     "box": 5,
     "diamond": 5,
+    "certainly": 5,
+    "probably": 5,
+    "unlikely": 5,
     "var": 6,
     "const": 6,
 }
@@ -183,12 +223,23 @@ def to_symbolic(expr: Expr) -> str:
     if expr.op == "diamond":
         inner = expr.children[0]
         return f"diamond({to_symbolic(inner)})"
+    if expr.op == "certainly":
+        inner = expr.children[0]
+        return f"certainly({to_symbolic(inner)})"
+    if expr.op == "probably":
+        inner = expr.children[0]
+        return f"probably({to_symbolic(inner)})"
+    if expr.op == "unlikely":
+        inner = expr.children[0]
+        return f"unlikely({to_symbolic(inner)})"
 
     left, right = expr.children
     if expr.op == "and":
         return f"{_maybe_wrap(left, 'and')} and {_maybe_wrap(right, 'and')}"
     if expr.op == "or":
         return f"{_maybe_wrap(left, 'or')} or {_maybe_wrap(right, 'or')}"
+    if expr.op == "xor":
+        return f"{_maybe_wrap(left, 'xor')} xor {_maybe_wrap(right, 'xor')}"
     if expr.op == "implies":
         return f"{_maybe_wrap(left, 'implies')} -> {_maybe_wrap(right, 'implies')}"
     if expr.op == "iff":
@@ -207,12 +258,20 @@ def to_natural(expr: Expr) -> str:
         return f"necessarily {to_natural(expr.children[0])}"
     if expr.op == "diamond":
         return f"possibly {to_natural(expr.children[0])}"
+    if expr.op == "certainly":
+        return f"certainly {to_natural(expr.children[0])}"
+    if expr.op == "probably":
+        return f"probably {to_natural(expr.children[0])}"
+    if expr.op == "unlikely":
+        return f"unlikely {to_natural(expr.children[0])}"
 
     left, right = expr.children
     if expr.op == "and":
         return f"{to_natural(left)} and {to_natural(right)}"
     if expr.op == "or":
         return f"{to_natural(left)} or {to_natural(right)}"
+    if expr.op == "xor":
+        return f"{to_natural(left)} xor {to_natural(right)}"
     if expr.op == "implies":
         return f"{to_natural(left)} implies {to_natural(right)}"
     if expr.op == "iff":
