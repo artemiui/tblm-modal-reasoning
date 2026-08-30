@@ -248,48 +248,47 @@ def format_world_facts(valuation: Dict[str, Dict[str, bool]], style: str = "stan
     return "; ".join(lines) if style == "compact" else ". ".join(lines) + "."
 
 
-# Few-shot exemplars for Part A (Hong et al. in-context matching)
-FEW_SHOT_4_SHOT_MISTRAL = """Example 1:
-ACCESS_START w0 w1 ACCESS_END
-In world w0: P is True, Q is False. In world w1: P is True, Q is True.
-[Rule 1] necessarily P implies Q. [Rule 2] R implies S.
-Query: Is Q necessarily true from w0?
-Answer: True.
+def format_proposition_facts(facts: Dict[str, bool], style: str = "compact") -> str:
+    parts = [f"{k} is {v}" for k, v in sorted(facts.items())]
+    return ", ".join(parts) if style == "compact" else ". ".join(f"{k} is {v}" for k, v in sorted(facts.items())) + "."
 
-Example 2:
-ACCESS_START w0 w1 ACCESS_END
-In world w0: P is True, Q is False. In world w1: P is False, Q is False.
+
+# Few-shot exemplars for Part A (Hong et al. in-context matching with Modal Propositions)
+FEW_SHOT_4_SHOT_MISTRAL = """Example 1:
+Facts: P is True, Q is False, R is True, S is False.
 [Rule 1] necessarily P implies Q. [Rule 2] R implies S.
-Query: Is Q necessarily true from w0?
+Query: Is Q necessarily true?
 Answer: False.
 
+Example 2:
+Facts: P is True, Q is True, R is False, S is False.
+[Rule 1] necessarily P implies Q. [Rule 2] R implies S.
+Query: Is Q necessarily true?
+Answer: True.
+
 Example 3:
-ACCESS_START w0 w1 ACCESS_END
-In world w0: A is False. In world w1: A is True.
-[Rule 1] possibly A. [Rule 2] B implies C.
-Query: Is A possibly true from w0?
+Facts: P is True, Q is False.
+[Rule 1] necessarily P implies possibly P. [Rule 2] Q implies R.
+Query: Is P possibly true?
 Answer: True.
 
 Example 4:
-ACCESS_START w0 ACCESS_END
-In world w0: A is False.
-[Rule 1] possibly A. [Rule 2] B implies C.
-Query: Is A possibly true from w0?
+Facts: P is False, Q is False.
+[Rule 1] possibly P implies necessarily possibly P. [Rule 2] Q implies R.
+Query: Is P possibly true?
 Answer: False.
 """
 
 FEW_SHOT_6_SHOT_GEMMA = FEW_SHOT_4_SHOT_MISTRAL + """
 Example 5:
-ACCESS_START w0 w1 ACCESS_END
-In world w0: P is True, Q is True. In world w1: P is True, Q is False.
-[Rule 1] necessarily P implies Q. [Rule 2] A implies B.
-Query: Is Q necessarily true from w0?
-Answer: False.
+Facts: P is True, Q is False.
+[Rule 1] necessarily P implies necessarily necessarily P. [Rule 2] Q implies S.
+Query: Is P necessarily true?
+Answer: True.
 
 Example 6:
-ACCESS_START w0 w1 ACCESS_END
-In world w0: P is False, Q is False. In world w1: P is True, Q is True.
-[Rule 1] possibly P and Q. [Rule 2] C implies D.
-Query: Is P and Q possibly true from w0?
+Facts: P is True, Q is False.
+[Rule 1] necessarily P or Q. [Rule 2] R implies S.
+Query: Is P or Q necessarily true?
 Answer: True.
 """

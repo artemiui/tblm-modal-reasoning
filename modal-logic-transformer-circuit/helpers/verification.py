@@ -92,7 +92,8 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
     Standard modal logic circuit families for Gemma-2-9B (Hong et al. + Modal Extensions):
       - QRLH: Queried-Rule Locators
       - MOH: Modal-Operator Heads (new)
-      - WAH: World-Accessibility Heads (new)
+      - MPH: Modal-Proposition Heads (new)
+      - CRH: Connective-Resolving Heads (new)
       - FPH: Fact Processors
       - QRMH: Queried-Rule Movers
       - DH: Decision Heads
@@ -100,6 +101,7 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
     base_circuit = {
         "QRLH": [(19, 11), (21, 0), (21, 7), (22, 5), (23, 12)],
         "MOH": [(20, 3), (22, 9), (23, 4)],
+        "MPH": [(21, 14), (23, 1), (25, 10)],
         "WAH": [(21, 14), (23, 1), (25, 10)],
         "CRH": [(20, 5), (22, 11)],
         "FPH": [(24, 5), (25, 7), (26, 0), (26, 12)],
@@ -110,6 +112,7 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
     seq_pos_to_keep = {
         "QRLH": slice(None),
         "MOH": slice(None),
+        "MPH": slice(None),
         "WAH": slice(None),
         "CRH": slice(None),
         "FPH": slice(None),
@@ -123,8 +126,9 @@ def circuit_specification(circuit_option: str = "full") -> Tuple[Dict[str, List[
         c = dict(base_circuit)
         c["MOH"] = []
         return c, seq_pos_to_keep
-    elif circuit_option == "no_wah":
+    elif circuit_option in {"no_mph", "no_wah"}:
         c = dict(base_circuit)
+        c["MPH"] = []
         c["WAH"] = []
         return c, seq_pos_to_keep
     elif circuit_option == "no_crh":

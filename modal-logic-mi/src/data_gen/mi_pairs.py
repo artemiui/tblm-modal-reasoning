@@ -72,17 +72,47 @@ def _build_k_axiom(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
     return expr, KripkeModel(frame, val), "w0"
 
 
-def _build_cross_world_composition(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
-    frame = KripkeFrame(
-        worlds=["w0", "w1", "w2"],
-        accessibility={"w0": ["w1"], "w1": ["w2"], "w2": ["w2"]}
-    )
+def _build_b_axiom(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
+    # Axiom B: P -> box(diamond(P)) on symmetric frames
+    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"], "w1": ["w0", "w1"]})
     val = {
         "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
         "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-        "w2": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
     }
-    expr = Box(Box(Var("Q")))
+    expr = Implies(Var("P"), Box(Diamond(Var("Q"))))
+    return expr, KripkeModel(frame, val), "w0"
+
+
+def _build_d_axiom(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
+    # Axiom D: box(P) -> diamond(P) on serial frames
+    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"], "w1": ["w1"]})
+    val = {
+        "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+        "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+    }
+    expr = Implies(Box(Var("P")), Diamond(Var("Q")))
+    return expr, KripkeModel(frame, val), "w0"
+
+
+def _build_four_axiom(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
+    # Axiom 4: box(P) -> box(box(P)) on transitive frames
+    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"], "w1": ["w1"]})
+    val = {
+        "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+        "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+    }
+    expr = Implies(Box(Var("P")), Box(Box(Var("Q"))))
+    return expr, KripkeModel(frame, val), "w0"
+
+
+def _build_five_axiom(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
+    # Axiom 5: diamond(P) -> box(diamond(P)) on euclidean frames
+    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"], "w1": ["w0", "w1"]})
+    val = {
+        "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+        "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
+    }
+    expr = Implies(Diamond(Var("P")), Box(Diamond(Var("Q"))))
     return expr, KripkeModel(frame, val), "w0"
 
 
@@ -112,7 +142,10 @@ MODAL_RULE_CATEGORIES: List[ModalRuleCategory] = [
     ModalRuleCategory("duality", "\u25a1P <-> ~\u25c7~P", _build_duality),
     ModalRuleCategory("t_axiom", "\u25a1P -> P", _build_t_axiom),
     ModalRuleCategory("k_axiom", "\u25a1(P -> Q) -> (\u25a1P -> \u25a1Q)", _build_k_axiom),
-    ModalRuleCategory("cross_world_composition", "\u25a1\u25a1P composition", _build_cross_world_composition),
+    ModalRuleCategory("b_axiom", "P -> \u25a1\u25c7P", _build_b_axiom),
+    ModalRuleCategory("d_axiom", "\u25a1P -> \u25c7P", _build_d_axiom),
+    ModalRuleCategory("four_axiom", "\u25a1P -> \u25a1\u25a1P", _build_four_axiom),
+    ModalRuleCategory("five_axiom", "\u25c7P -> \u25a1\u25c7P", _build_five_axiom),
     ModalRuleCategory("modal_commutative_associative", "\u25a1(P and Q) <-> \u25a1P and \u25a1Q", _build_modal_commutative_associative),
     ModalRuleCategory("connective_disjunction", "\u25a1(P or Q)", _build_connective_disjunction),
 ]
@@ -127,7 +160,18 @@ def generate_single_modal_mi_sample(
     corruption_mode: str = "random",
     max_attempts: int = 50,
 ) -> Dict[str, object]:
-    cat = next((c for c in MODAL_RULE_CATEGORIES if c.name == category_name), None)
+    # Alias normalization for 4_axiom / 5_axiom
+    normalized_category = {
+        "4_axiom": "four_axiom",
+        "5_axiom": "five_axiom",
+        "axiom_4": "four_axiom",
+        "axiom_5": "five_axiom",
+        "axiom_b": "b_axiom",
+        "axiom_d": "d_axiom",
+        "axiom_t": "t_axiom",
+        "axiom_k": "k_axiom",
+    }.get(category_name, category_name)
+    cat = next((c for c in MODAL_RULE_CATEGORIES if c.name == normalized_category), None)
     if cat is None:
         raise KeyError(f"Unknown rule category {category_name}")
 

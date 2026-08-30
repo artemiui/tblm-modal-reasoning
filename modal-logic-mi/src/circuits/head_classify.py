@@ -22,12 +22,14 @@ def classify_heads(
       - QRMH (Queried-Rule Mover Heads)
       - FPH (Fact-Processing Heads)
       - DH (Decision Heads)
-    PLUS two new modal-specific families:
+    PLUS novel modal-specific families:
       - MOH (Modal-Operator Heads): high IE under modal_operator_flip
-      - WAH (World-Accessibility Heads): high IE under accessibility_flip + negative control check
+      - MPH (Modal-Proposition Heads): high IE under modal_proposition_flip
+      - CRH (Connective-Resolving Heads): high IE under connective_flip
     """
     families: Dict[str, List[Tuple[int, int]]] = {
         "MOH": [],
+        "MPH": [],
         "WAH": [],
         "CRH": [],
         "QRLH": [],
@@ -47,9 +49,9 @@ def classify_heads(
         moh_pairs = pairs_by_type.get("modal_operator_flip", [])
         moh_score = _eval_pair_effect(model, l, h, moh_pairs, true_id, false_id)
 
-        # Test WAH: Indirect effect under accessibility_flip
-        wah_pairs = pairs_by_type.get("accessibility_flip", [])
-        wah_score, inaccessible_att_mass = _eval_wah_effect(model, l, h, wah_pairs, true_id, false_id)
+        # Test MPH: Indirect effect under modal_proposition_flip
+        mph_pairs = pairs_by_type.get("modal_proposition_flip", pairs_by_type.get("accessibility_flip", []))
+        mph_score = _eval_pair_effect(model, l, h, mph_pairs, true_id, false_id)
 
         # Test CRH: Connective flip effect (AND <-> OR)
         crh_pairs = pairs_by_type.get("connective_flip", [])
@@ -62,8 +64,8 @@ def classify_heads(
         # Test QRLH / QRMH / DH based on layer depth and subcomponent profiles
         if moh_score > 0.15:
             families["MOH"].append((l, h))
-        elif wah_score > 0.15 and inaccessible_att_mass < 0.05:
-            # WAH must satisfy accessibility specificity (negative-control assertion)
+        elif mph_score > 0.15:
+            families["MPH"].append((l, h))
             families["WAH"].append((l, h))
         elif crh_score > 0.15:
             families["CRH"].append((l, h))

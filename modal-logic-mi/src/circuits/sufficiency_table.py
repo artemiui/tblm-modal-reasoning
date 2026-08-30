@@ -19,7 +19,8 @@ def verify_sufficiency(
     Produce ablation table:
       - Full Circuit (C)
       - C - MOH
-      - C - WAH
+      - C - MPH
+      - C - CRH
       - C - QRLH
       - C - QRMH
       - C - FPH

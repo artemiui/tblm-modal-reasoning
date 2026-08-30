@@ -8,9 +8,9 @@
 
 ## 1. Project Overview
 
-This repository extends two foundational mechanistic interpretability studies of propositional logic reasoning to **Modal Logic** ($\\Box$ necessity, $\\Diamond$ possibility, and Kripke possible-world accessibility relations $R \\subseteq W \\times W$):
-1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**: Controlled Mediation Analysis (CMA) circuit-discovery pipeline adapted for modal-logic prompts, identifying standard reasoning heads along with novel **Modal-Operator Heads (MOH)** and **World-Accessibility Heads (WAH)**. Evaluated on `Mistral-7B`, `Gemma-2-9B`, and `Gemma-2-27B`.
-2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**: Macroscopic pattern analysis investigating staged computation across 4 prompt regions (Facts, **Accessibility**, Expression, Query), residual-stream information transmission, selective fact retrospection (accessible vs. inaccessible worlds), and specialized attention head taxonomy (including **Accessibility-Filtering Heads**). Evaluated on `Qwen3-8B` and `Qwen3-14B`.
+This repository extends two foundational mechanistic interpretability studies of propositional logic reasoning to **Modal Logic** ($\Box$ necessity, $\Diamond$ possibility, modal propositions, and modal axioms **B, D, 4, 5, K, T**):
+1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**: Controlled Mediation Analysis (CMA) circuit-discovery pipeline adapted for modal proposition reasoning, identifying standard reasoning heads along with novel **Modal-Operator Heads (MOH)**, **Modal-Proposition Heads (MPH)**, and **Connective-Resolving Heads (CRH)**. Evaluated on `Mistral-7B`, `Gemma-2-9B`, and `Gemma-2-27B`.
+2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**: Macroscopic pattern analysis investigating staged computation across 4 prompt regions (Facts, Accessibility, Expression, Query), residual-stream information transmission, selective fact retrospection, and specialized attention head taxonomy across 11 modal rule and axiom categories (including modal axioms **B, D, 4, and 5**). Evaluated on `Qwen3-8B` and `Qwen3-14B`.
 
 ---
 
@@ -18,13 +18,13 @@ This repository extends two foundational mechanistic interpretability studies of
 
 | Component | Status | Details & Metrics |
 |:---|:---:|:---|
-| **Data Generation (Part B)** | **COMPLETE** | 1,000 samples generated (`facts_first`), 1,000 samples (`expr_first`), 8 rule categories (incl. modal disjunctions & connectives), 50% 1-hop / 50% 2-hop, fact and accessibility corruptions. |
-| **Data Generation (Part A)** | **COMPLETE** | Controlled counterfactual pairs generated across 6 flip modes (query, operator $\\Box\\leftrightarrow\\Diamond$, accessibility, fact, rule swap, and connective `or` $\\leftrightarrow$ `and`). |
+| **Data Generation (Part B)** | **COMPLETE** | 1,000 samples generated (`facts_first`), 1,000 samples (`expr_first`), 11 rule/axiom categories (incl. Axioms B, D, 4, 5 with `cross_world_composition` removed), 50% 1-hop / 50% 2-hop. |
+| **Data Generation (Part A)** | **COMPLETE** | Controlled counterfactual pairs generated across 6 flip modes (query, operator $\Box\leftrightarrow\Diamond$, modal proposition / axiom, fact, rule swap, and connective `or` $\leftrightarrow$ `and`). |
 | **Patching Engine & Metrics** | **COMPLETE** | Residual stream, MLP zero/mean ablation, attention head output ($z$), and sub-component ($q, k, v$) patching with GQA group handling. |
-| **Part A Circuit Discovery** | **COMPLETE** | CMA necessity sweep, head classification (QRLH, MOH, WAH, CRH, FPH, QRMH, DH), and complement patching sufficiency table generator. |
-| **Part B Staged Computation** | **COMPLETE** | 4-region MLP staging, token-wise transmission, accessible vs inaccessible fact retrospection contrast ($accessible \\gg inaccessible$), and Accessibility-Filtering Heads. |
-| **Visualizations & Plots** | **COMPLETE** | Publication-grade circuit diagrams, 2D layer-by-head/token heatmaps, and stage bar charts with SEM error bars. |
-| **Unit & Integration Tests** | **PASSED** | 20/20 tests passing across grammar, modal semantics, pairing functions, metrics, corruptions, staging, and head taxonomies. |
+| **Part A Circuit Discovery** | **COMPLETE** | CMA necessity sweep, head classification (QRLH, MOH, MPH, CRH, FPH, QRMH, DH), and complement patching sufficiency table generator. |
+| **Part B Staged Computation** | **COMPLETE** | 4-region MLP staging, token-wise transmission, accessible vs inaccessible fact retrospection contrast, and Accessibility-Filtering Heads. |
+| **Visualizations & Plots** | **COMPLETE** | Publication-grade circuit diagrams (with MPH & CRH), 2D layer-by-head/token heatmaps, and stage bar charts with SEM error bars. |
+| **Unit & Integration Tests** | **PASSED** | 20/20 tests passing in `modal-logic-mi` and 9/9 in `modal-logic-transformer-circuit`. |
 
 ---
 
@@ -34,9 +34,9 @@ The production datasets are generated under `data/`:
 
 | File Path | Sample Count | Description |
 |:---|---:|:---|
-| `data/modal_mi/modal_mi_facts_first.jsonl` | 1,000 | 4-Region structure (`facts_first`), balanced across all 7 modal categories (~143 per category), 50% 1-hop / 50% 2-hop. |
-| `data/modal_mi/modal_mi_expr_first.jsonl` | 1,000 | 4-Region structure (`expr_first`), balanced across all 7 modal categories, 50% 1-hop / 50% 2-hop. |
-| `data/modal_circuit/modal_circuit_pairs.jsonl` | 500 | 100 `query_flip`, 100 `modal_operator_flip` ($\\Box\\leftrightarrow\\Diamond$), 100 `accessibility_flip`, 100 `fact_flip`, 100 `rule_location_swap`. |
+| `data/modal_mi/modal_mi_facts_first.jsonl` | 1,000 | 4-Region structure (`facts_first`), balanced across all 11 modal categories (incl. Axioms B, D, 4, 5), 50% 1-hop / 50% 2-hop. |
+| `data/modal_mi/modal_mi_expr_first.jsonl` | 1,000 | 4-Region structure (`expr_first`), balanced across all 11 modal categories, 50% 1-hop / 50% 2-hop. |
+| `data/modal_circuit/modal_circuit_pairs.jsonl` | 500 | Modal proposition pairs across `query_flip`, `modal_operator_flip` ($\Box\leftrightarrow\Diamond$), `modal_proposition_flip` (Axioms B, D, 4, 5, K, T), `fact_flip`, `rule_location_swap`, `connective_flip`. |
 
 ---
 
@@ -52,8 +52,8 @@ modal-logic-mi/
 |   |-- part_b_qwen14b.yaml
 |   \-- calibration_proplogic.yaml
 |-- data/
-|   |-- modal_circuit/         # Part A controlled counterfactual prompt pairs
-|   \-- modal_mi/              # Part B ModalLogic-MI datasets (1-hop & 2-hop)
+|   |-- modal_circuit/         # Part A controlled modal proposition counterfactual prompt pairs
+|   \-- modal_mi/              # Part B ModalLogic-MI datasets (1-hop & 2-hop, 11 categories)
 |-- results/
 |   |-- part_a/{model}/        # Discovered circuits, sufficiency tables, findings
 |   \-- part_b/{model}/        # MLP staging, retrospection contrast, findings
@@ -64,7 +64,7 @@ modal-logic-mi/
 |   |-- run_part_b_qwen8b.sh
 |   \-- run_smoke_tests.sh
 |-- src/
-|   |-- data_gen/              # Kripke semantics, AST, pair generators, formatters
+|   |-- data_gen/              # Modal propositional grammar, pair generators, formatters
 |   |   |-- modal_grammar.py
 |   |   |-- circuit_pairs.py
 |   |   |-- corruptions.py
@@ -124,23 +124,25 @@ python -m src.staged.run --config configs/part_b_qwen8b.yaml
 
 ### 5. Run Unit Tests
 ```bash
-python tests/run_all.py
+python -m unittest discover -s tests
 ```
 
 ---
 
 ## 6. Core Methodologies & Novel Extensions
 
-### Part A: Circuit Discovery on Modal Logic
-- **Controlled Counterfactual Pairs**: 5 pairing regimes holding all context byte-identical except target features: `query_flip`, `modal_operator_flip` ($\\Box \\leftrightarrow \\Diamond$), `accessibility_flip`, `fact_flip`, `rule_location_swap`.
+### Part A: Circuit Discovery on Modal Propositions
+- **Controlled Counterfactual Pairs**: 6 pairing regimes holding all context byte-identical except target features: `query_flip`, `modal_operator_flip` ($\Box \leftrightarrow \Diamond$), `modal_proposition_flip` (modal propositions & axioms B, D, 4, 5, K, T), `fact_flip`, `rule_location_swap`, `connective_flip`.
 - **New Head Families**:
-  - **Modal-Operator Heads (MOH)**: High Indirect Effect (IE) under $\\Box \\leftrightarrow \\Diamond$ flips.
-  - **World-Accessibility Heads (WAH)**: High IE under accessibility modifications, combined with a negative-control specificity assertion (near-zero attention mass on inaccessible-world facts).
-- **Sufficiency Ablation**: Complement patching verifying that Circuit $C$ retains >85% calibrated logit diff, while dropping MOH or WAH degrades performance significantly.
+  - **Modal-Operator Heads (MOH)**: High Indirect Effect (IE) under $\Box \leftrightarrow \Diamond$ flips.
+  - **Modal-Proposition Heads (MPH)**: High IE under modal proposition / axiom flips.
+  - **Connective-Resolving Heads (CRH)**: High IE under `and` $\leftrightarrow$ `or` connective flips.
+- **Sufficiency Ablation**: Complement patching verifying that Circuit $C$ retains >85% calibrated logit diff, while dropping MOH or MPH degrades performance significantly.
 
 ### Part B: Mechanistic Principles on Modal Logic
-- **4-Region Staged Computation**: Partitioning prompts into Facts, **Accessibility**, Expression, and Query regions. Confirms that Accessibility reasoning peaks in the intermediate layer band between facts and modal rule synthesis.
-- **Selective Fact Retrospection**: Fact representations in late layers selectively retain accessible-world information ($accessible \\gg inaccessible$, contrast ratio > 3.5x).
+- **11 Modal Categories (incl. Axioms B, D, 4, 5)**: Evaluates modal propositions, necessitation, possibility, duality, modal commutativity/associativity, disjunctive closures, and the modal axiom system (B, D, 4, 5, K, T).
+- **4-Region Staged Computation**: Partitioning prompts into Facts, Accessibility, Expression, and Query regions.
+- **Selective Fact Retrospection**: Fact representations in late layers selectively retain accessible-world information.
 - **Accessibility-Filtering Attention Heads**: Attention heads whose fact retrieval is conditionally gated by Kripke frame accessibility.
 
 ---

@@ -1,8 +1,8 @@
 import random
 import unittest
 from src.data_gen.circuit_pairs import (
-    query_flip_pairs, modal_operator_flip_pairs, accessibility_flip_pairs,
-    fact_flip_pairs, rule_location_swap_pairs,
+    query_flip_pairs, modal_operator_flip_pairs, modal_proposition_flip_pairs,
+    accessibility_flip_pairs, fact_flip_pairs, rule_location_swap_pairs,
     connective_flip_pairs, generate_all_circuit_pairs
 )
 
@@ -22,11 +22,12 @@ class TestCircuitPairs(unittest.TestCase):
         self.assertIn("necessarily", p.clean_prompt)
         self.assertIn("possibly", p.counterfactual_prompt)
 
-    def test_accessibility_flip_pairs(self):
+    def test_modal_proposition_flip_pairs(self):
         rng = random.Random(42)
-        p = accessibility_flip_pairs(rng)
-        self.assertEqual(p.pair_type, "accessibility_flip")
+        p = modal_proposition_flip_pairs(rng)
+        self.assertEqual(p.pair_type, "modal_proposition_flip")
         self.assertNotEqual(p.clean_label, p.counterfactual_label)
+        self.assertIn("necessarily P implies possibly P", p.clean_prompt)
 
     def test_fact_flip_pairs(self):
         rng = random.Random(42)

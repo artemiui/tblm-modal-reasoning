@@ -23,6 +23,7 @@ class TestCircuits(unittest.TestCase):
         pairs_by_type = {}
         families = classify_heads(model, candidate_heads, pairs_by_type)
         self.assertIn("MOH", families)
+        self.assertIn("MPH", families)
         self.assertIn("WAH", families)
         self.assertIn("CRH", families)
         self.assertIn("QRLH", families)

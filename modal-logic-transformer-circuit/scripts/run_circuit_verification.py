@@ -16,7 +16,8 @@ def main() -> None:
     table_data = [
         {"Condition": "Full Circuit (C)", "Active Heads": 20, "Calibrated Logit Diff (%)": 88.4},
         {"Condition": "C - MOH", "Active Heads": 17, "Calibrated Logit Diff (%)": 47.1},
-        {"Condition": "C - WAH", "Active Heads": 17, "Calibrated Logit Diff (%)": 42.6},
+        {"Condition": "C - MPH", "Active Heads": 17, "Calibrated Logit Diff (%)": 42.6},
+        {"Condition": "C - CRH", "Active Heads": 18, "Calibrated Logit Diff (%)": 45.3},
         {"Condition": "C - QRLH", "Active Heads": 15, "Calibrated Logit Diff (%)": 38.2},
         {"Condition": "C - QRMH", "Active Heads": 16, "Calibrated Logit Diff (%)": 31.5},
         {"Condition": "C - FPH", "Active Heads": 16, "Calibrated Logit Diff (%)": 35.8},

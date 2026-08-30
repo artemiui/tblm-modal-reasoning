@@ -139,10 +139,8 @@ def sample_modal_chain(
     accessible_worlds: Optional[List[str]] = None,
     truths: Optional[List[str]] = None,
     modal_first: bool = True,
+    facts_override: Optional[List[List[Any]]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    if accessible_worlds is None:
-        accessible_worlds = ["w0", "w1"]
-
     vars_all = list(range(prop_var_range))
     random.shuffle(vars_all)
     vars_modal = vars_all[:depth * 2]
@@ -153,12 +151,13 @@ def sample_modal_chain(
     var_r = vars_lin[0]
     var_s = vars_lin[1]
 
-    truth_p_w0 = "TRUE" if (truths is None) else truths[0]
-    truth_p_w1 = "TRUE" if (truths is None) else truths[1]
-    truth_r_w0 = "TRUE" if (truths is None or len(truths) < 3) else truths[2]
+    truth_p = "TRUE" if (truths is None) else truths[0]
+    truth_r = "TRUE" if (truths is None or len(truths) < 3) else truths[2]
 
-    facts_w0 = [[var_p, truth_p_w0], [var_q, "FALSE"], [var_r, truth_r_w0], [var_s, "FALSE"]]
-    facts_w1 = [[var_p, truth_p_w1], [var_q, "TRUE"]]
+    if facts_override is not None:
+        facts = facts_override
+    else:
+        facts = [[var_p, truth_p], [var_q, "FALSE"], [var_r, truth_r], [var_s, "FALSE"]]
 
     op_token = special_token_dict[operator]
     conn_tok = special_token_dict.get(connective, special_token_dict["THEN"])
@@ -170,61 +169,47 @@ def sample_modal_chain(
     else:
         rules = [rule_lin, rule_modal]
 
-    if operator == "BOX":
-        p_in_acc = True
-        if "w0" in accessible_worlds and truth_p_w0 != "TRUE":
-            p_in_acc = False
-        if "w1" in accessible_worlds and truth_p_w1 != "TRUE":
-            p_in_acc = False
-        modal_conclusion_truth = "TRUE" if p_in_acc else "UNDETERMINED"
-    else:  # DIAMOND
-        p_in_acc = False
-        if "w0" in accessible_worlds and truth_p_w0 == "TRUE":
-            p_in_acc = True
-        if "w1" in accessible_worlds and truth_p_w1 == "TRUE":
-            p_in_acc = True
-        modal_conclusion_truth = "TRUE" if p_in_acc else "UNDETERMINED"
+    modal_conclusion_truth = "TRUE" if truth_p == "TRUE" else "UNDETERMINED"
+    lin_conclusion_truth = "TRUE" if truth_r == "TRUE" else "UNDETERMINED"
 
-    lin_conclusion_truth = "TRUE" if truth_r_w0 == "TRUE" else "UNDETERMINED"
-
-    cot_modal = []
-    if "w0" in accessible_worlds:
-        cot_modal.append([special_token_dict["W0"], var_p, special_token_dict[truth_p_w0]])
-    if "w1" in accessible_worlds:
-        cot_modal.append([special_token_dict["W1"], var_p, special_token_dict[truth_p_w1]])
-    cot_modal.append([op_token, var_p, special_token_dict["THEN"], var_q, special_token_dict[";"], var_q, special_token_dict[modal_conclusion_truth]])
+    cot_modal = [
+        [var_p, special_token_dict[truth_p]],
+        [op_token, var_p, conn_tok, var_q, special_token_dict[";"], var_q, special_token_dict[modal_conclusion_truth]]
+    ]
 
     cot_lin = [
-        [special_token_dict["W0"], var_r, special_token_dict[truth_r_w0]],
+        [var_r, special_token_dict[truth_r]],
         [var_r, special_token_dict["THEN"], var_s, special_token_dict[";"], var_s, special_token_dict[lin_conclusion_truth]]
     ]
 
     sample_dict_modal = {
         "rules": rules,
-        "facts_w0": facts_w0,
-        "facts_w1": facts_w1,
-        "accessible_worlds": accessible_worlds,
+        "facts": facts,
+        "facts_w0": facts,
+        "facts_w1": facts,
+        "accessible_worlds": ["w0"],
         "query": var_q,
         "operator": operator,
         "query_type": "modal",
         "cot": cot_modal,
         "answer": modal_conclusion_truth,
         "queried_rule": rule_modal,
-        "correct_fact": [var_p, truth_p_w0],
+        "correct_fact": [var_p, truth_p],
     }
 
     sample_dict_lin = {
         "rules": rules,
-        "facts_w0": facts_w0,
-        "facts_w1": facts_w1,
-        "accessible_worlds": accessible_worlds,
+        "facts": facts,
+        "facts_w0": facts,
+        "facts_w1": facts,
+        "accessible_worlds": ["w0"],
         "query": var_s,
         "operator": operator,
         "query_type": "linear",
         "cot": cot_lin,
         "answer": lin_conclusion_truth,
         "queried_rule": rule_lin,
-        "correct_fact": [var_r, truth_r_w0],
+        "correct_fact": [var_r, truth_r],
     }
 
     return sample_dict_modal, sample_dict_lin
@@ -233,22 +218,9 @@ def sample_modal_chain(
 def generate_modal_sample_tokens(sample_dict: Dict[str, Any]) -> Tuple[List[int], List[int], int]:
     context = []
 
-    context.append(special_token_dict["ACCESS_START"])
-    for w in sample_dict["accessible_worlds"]:
-        w_tok = special_token_dict[w.upper()]
-        context.append(w_tok)
-    context.append(special_token_dict["ACCESS_END"])
-    context.append(special_token_dict["SEP"])
-
     context.append(special_token_dict["START_FACT"])
-    context.append(special_token_dict["W0"])
-    for f in sample_dict["facts_w0"]:
-        context.append(f[0])
-        context.append(special_token_dict[f[1]])
-        context.append(special_token_dict["SEP"])
-
-    context.append(special_token_dict["W1"])
-    for f in sample_dict["facts_w1"]:
+    facts_list = sample_dict.get("facts", sample_dict.get("facts_w0", []))
+    for f in facts_list:
         context.append(f[0])
         context.append(special_token_dict[f[1]])
         context.append(special_token_dict["SEP"])
@@ -308,9 +280,8 @@ def sample_context_and_answer_pairs_EXAMPLES(num_samples: int = 4, length_of_cha
     gt_string = ""
     for i in range(num_samples):
         op = "BOX" if (i % 2 == 0) else "DIAMOND"
-        acc = ["w0", "w1"] if (i < num_samples - 1) else ["w0"]
         t_vals = ["TRUE", "TRUE", "TRUE"] if (i % 2 == 0) else ["FALSE", "TRUE", "FALSE"]
-        s_modal, _ = sample_modal_chain(depth=length_of_chain, operator=op, accessible_worlds=acc, truths=t_vals)
+        s_modal, _ = sample_modal_chain(depth=length_of_chain, operator=op, truths=t_vals)
         ctx, ans, _ = generate_modal_sample_tokens(s_modal)
         _, ctx_eng = convert_to_english(ctx)
         _, ans_eng = convert_to_english(ans, is_question=False)
@@ -321,7 +292,7 @@ def sample_context_and_answer_pairs_EXAMPLES(num_samples: int = 4, length_of_cha
 
 def generate_cot_question_query_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
     examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
-    s_modal, s_lin = sample_modal_chain(depth=length_of_chain, operator="BOX", accessible_worlds=["w0", "w1"], truths=["TRUE", "TRUE", "TRUE"])
+    s_modal, s_lin = sample_modal_chain(depth=length_of_chain, operator="BOX", truths=["TRUE", "TRUE", "TRUE"])
 
     ctx_m, ans_m, _ = generate_modal_sample_tokens(s_modal)
     ctx_l, ans_l, _ = generate_modal_sample_tokens(s_lin)
@@ -342,8 +313,8 @@ def generate_cot_question_query_based(length_of_chain: int = 2, num_cot_samples:
 
 def generate_cot_question_operator_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
     examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
-    s_box, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", accessible_worlds=["w0", "w1"], truths=["FALSE", "TRUE", "FALSE"])
-    s_dia, _ = sample_modal_chain(depth=length_of_chain, operator="DIAMOND", accessible_worlds=["w0", "w1"], truths=["FALSE", "TRUE", "FALSE"])
+    s_box, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", truths=["FALSE", "TRUE", "FALSE"])
+    s_dia, _ = sample_modal_chain(depth=length_of_chain, operator="DIAMOND", truths=["FALSE", "TRUE", "FALSE"])
 
     ctx_b, ans_b, _ = generate_modal_sample_tokens(s_box)
     ctx_d, ans_d, _ = generate_modal_sample_tokens(s_dia)
@@ -356,27 +327,32 @@ def generate_cot_question_operator_based(length_of_chain: int = 2, num_cot_sampl
     return f"{examples_str}\n{prompt_b}", gt_b, f"{examples_str}\n{prompt_d}", gt_d, s_box, s_dia
 
 
-def generate_cot_question_accessibility_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
+def generate_cot_question_proposition_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
+    """Generate counterfactual pair contrasting modal proposition premises / axioms."""
     examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
-    s_acc2, _ = sample_modal_chain(depth=length_of_chain, operator="DIAMOND", accessible_worlds=["w0", "w1"], truths=["FALSE", "TRUE", "FALSE"])
-    s_acc1, _ = sample_modal_chain(depth=length_of_chain, operator="DIAMOND", accessible_worlds=["w0"], truths=["FALSE", "TRUE", "FALSE"])
+    s_prop1, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", truths=["TRUE", "TRUE", "TRUE"])
+    s_prop2, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", truths=["FALSE", "TRUE", "FALSE"])
 
-    ctx_2, ans_2, _ = generate_modal_sample_tokens(s_acc2)
-    ctx_1, ans_1, _ = generate_modal_sample_tokens(s_acc1)
+    ctx_1, ans_1, _ = generate_modal_sample_tokens(s_prop1)
+    ctx_2, ans_2, _ = generate_modal_sample_tokens(s_prop2)
 
-    _, prompt_2 = convert_to_english(ctx_2)
     _, prompt_1 = convert_to_english(ctx_1)
-    _, gt_2 = convert_to_english(ans_2, is_question=False)
+    _, prompt_2 = convert_to_english(ctx_2)
     _, gt_1 = convert_to_english(ans_1, is_question=False)
+    _, gt_2 = convert_to_english(ans_2, is_question=False)
 
-    return f"{examples_str}\n{prompt_2}", gt_2, f"{examples_str}\n{prompt_1}", gt_1, s_acc2, s_acc1
+    return f"{examples_str}\n{prompt_1}", gt_1, f"{examples_str}\n{prompt_2}", gt_2, s_prop1, s_prop2
+
+
+# Backward compatibility alias
+generate_cot_question_accessibility_based = generate_cot_question_proposition_based
 
 
 def generate_cot_question_connective_based(length_of_chain: int = 2, num_cot_samples: int = 4) -> Tuple[str, str, str, str, Dict[str, Any], Dict[str, Any]]:
     """Generate counterfactual pair contrasting disjunctive 'or' vs conjunctive 'and' rules."""
     examples_str, _ = sample_context_and_answer_pairs_EXAMPLES(num_cot_samples, length_of_chain)
-    s_or, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", connective="DISJ", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
-    s_and, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", connective="CONJ", accessible_worlds=["w0", "w1"], truths=["TRUE", "FALSE", "FALSE"])
+    s_or, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", connective="DISJ", truths=["TRUE", "FALSE", "FALSE"])
+    s_and, _ = sample_modal_chain(depth=length_of_chain, operator="BOX", connective="CONJ", truths=["TRUE", "FALSE", "FALSE"])
 
     ctx_o, ans_o, _ = generate_modal_sample_tokens(s_or)
     ctx_a, ans_a, _ = generate_modal_sample_tokens(s_and)

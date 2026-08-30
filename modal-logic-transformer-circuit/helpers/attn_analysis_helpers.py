@@ -97,8 +97,9 @@ def clause_token_spans_for_batch(
     spans: Dict[str, List[Optional[Span]]] = {
         "queried_rule": [],
         "correct_fact": [],
-        "accessibility_clause": [],
+        "modal_proposition_span": [],
         "modal_operator_token": [],
+        "accessibility_clause": [],
         "accessible_facts": [],
         "inaccessible_facts": [],
     }
@@ -122,13 +123,14 @@ def clause_token_spans_for_batch(
 
         rule_text = str(info.get("queried_rule", ""))
         r_start = rules_span[1] if rules_span else 0
-        r_end = facts_span[0] if facts_span else len(tokens_row)
+        r_end = q_span[0] if q_span else len(tokens_row)
         q_rule_span = _find_in_range(tokens_row, model, rule_text, r_start, r_end) if rule_text else None
         spans["queried_rule"].append(q_rule_span)
+        spans["modal_proposition_span"].append(q_rule_span if q_rule_span else rules_span)
 
         fact_text = str(info.get("correct_fact", ""))
         f_start = facts_span[1] if facts_span else 0
-        f_end = q_span[0] if q_span else len(tokens_row)
+        f_end = rules_span[0] if rules_span else (q_span[0] if q_span else len(tokens_row))
         c_fact_span = _find_in_range(tokens_row, model, fact_text, f_start, f_end) if fact_text else None
         spans["correct_fact"].append(c_fact_span)
 
