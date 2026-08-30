@@ -1,0 +1,10 @@
+model_id: "google/gemma-2-27b-it"
+model_source: "huggingface"
+device: "cuda"
+device_map: "auto"
+dtype: "float16"
+samples_per_type: 60
+few_shot_style: "6shot"
+threshold: 0.05
+output_dir: "results/part_a/gemma27b"
+seed: 42
