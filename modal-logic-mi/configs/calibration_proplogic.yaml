@@ -1,4 +1,4 @@
-model_id: "Qwen/Qwen3-8B"
+model_id: "Qwen/Qwen3.5-9B"
 model_source: "huggingface"
 device: "cuda"
 dtype: "float16"

@@ -9,8 +9,8 @@
 ## 1. Project Overview
 
 This repository extends two foundational mechanistic interpretability studies of propositional logic reasoning to **Modal Logic** ($\Box$ necessity, $\Diamond$ possibility, modal propositions, and modal axioms **B, D, 4, 5, K, T**):
-1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**: Controlled Mediation Analysis (CMA) circuit-discovery pipeline adapted for modal proposition reasoning, identifying standard reasoning heads along with novel **Modal-Operator Heads (MOH)**, **Modal-Proposition Heads (MPH)**, and **Connective-Resolving Heads (CRH)**. Evaluated on `Mistral-7B`, `Gemma-2-9B`, and `Gemma-2-27B`.
-2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**: Macroscopic pattern analysis investigating staged computation across 4 prompt regions (Facts, Accessibility, Expression, Query), residual-stream information transmission, selective fact retrospection, and specialized attention head taxonomy across 11 modal rule and axiom categories (including modal axioms **B, D, 4, and 5**). Evaluated on `Qwen3-8B` and `Qwen3-14B`.
+1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**: Controlled Mediation Analysis (CMA) circuit-discovery pipeline adapted for modal proposition reasoning, identifying standard reasoning heads along with novel **Modal-Operator Heads (MOH)**, **Modal-Proposition Heads (MPH)**, and **Connective-Resolving Heads (CRH)**. Evaluated on `Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B`.
+2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**: Macroscopic pattern analysis investigating staged computation across 4 prompt regions (Facts, Accessibility, Expression, Query), residual-stream information transmission, selective fact retrospection, and specialized attention head taxonomy across 11 modal rule and axiom categories (including modal axioms **B, D, 4, and 5**). Evaluated on `Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B`.
 
 ---
 
@@ -20,7 +20,7 @@ This repository extends two foundational mechanistic interpretability studies of
 |:---|:---:|:---|
 | **Data Generation (Part B)** | **COMPLETE** | 1,000 samples generated (`facts_first`), 1,000 samples (`expr_first`), 11 rule/axiom categories (incl. Axioms B, D, 4, 5 with `cross_world_composition` removed), 50% 1-hop / 50% 2-hop. |
 | **Data Generation (Part A)** | **COMPLETE** | Controlled counterfactual pairs generated across 6 flip modes (query, operator $\Box\leftrightarrow\Diamond$, modal proposition / axiom, fact, rule swap, and connective `or` $\leftrightarrow$ `and`). |
-| **Patching Engine & Metrics** | **COMPLETE** | Residual stream, MLP zero/mean ablation, attention head output ($z$), and sub-component ($q, k, v$) patching with GQA group handling. |
+| **Patching Engine & Metrics** | **COMPLETE** | Residual stream, MLP zero/mean ablation, attention head output ($z$), and sub-component ($q, k, v$) patching with dynamic GQA group handling for Qwen3.5. |
 | **Part A Circuit Discovery** | **COMPLETE** | CMA necessity sweep, head classification (QRLH, MOH, MPH, CRH, FPH, QRMH, DH), and complement patching sufficiency table generator. |
 | **Part B Staged Computation** | **COMPLETE** | 4-region MLP staging, token-wise transmission, accessible vs inaccessible fact retrospection contrast, and Accessibility-Filtering Heads. |
 | **Visualizations & Plots** | **COMPLETE** | Publication-grade circuit diagrams (with MPH & CRH), 2D layer-by-head/token heatmaps, and stage bar charts with SEM error bars. |
@@ -44,12 +44,13 @@ The production datasets are generated under `data/`:
 
 ```text
 modal-logic-mi/
-|-- configs/                   # Experiment configurations for Part A and Part B
-|   |-- part_a_mistral7b.yaml
-|   |-- part_a_gemma9b.yaml
-|   |-- part_a_gemma27b.yaml
-|   |-- part_b_qwen8b.yaml
-|   |-- part_b_qwen14b.yaml
+|-- configs/                   # Experiment configurations for Part A and Part B (Qwen3.5 suite)
+|   |-- part_a_qwen3.5_2b.yaml
+|   |-- part_a_qwen3.5_4b.yaml
+|   |-- part_a_qwen3.5_9b.yaml
+|   |-- part_b_qwen3.5_2b.yaml
+|   |-- part_b_qwen3.5_4b.yaml
+|   |-- part_b_qwen3.5_9b.yaml
 |   \-- calibration_proplogic.yaml
 |-- data/
 |   |-- modal_circuit/         # Part A controlled modal proposition counterfactual prompt pairs
@@ -59,9 +60,13 @@ modal-logic-mi/
 |   \-- part_b/{model}/        # MLP staging, retrospection contrast, findings
 |-- scripts/                   # End-to-end execution scripts
 |   |-- dataset_create.sh
-|   |-- run_part_a_mistral7b.sh
-|   |-- run_part_a_gemma9b.sh
-|   |-- run_part_b_qwen8b.sh
+|   |-- run_part_a_qwen3.5_2b.sh
+|   |-- run_part_a_qwen3.5_4b.sh
+|   |-- run_part_a_qwen3.5_9b.sh
+|   |-- run_part_b_qwen3.5_2b.sh
+|   |-- run_part_b_qwen3.5_4b.sh
+|   |-- run_part_b_qwen3.5_9b.sh
+|   |-- run_comparative_baseline.sh
 |   \-- run_smoke_tests.sh
 |-- src/
 |   |-- data_gen/              # Modal propositional grammar, pair generators, formatters
@@ -114,15 +119,20 @@ bash scripts/dataset_create.sh
 
 ### 3. Run Part A: Modal Circuit Discovery
 ```bash
-python -m src.circuits.run --config configs/part_a_mistral7b.yaml
+python -m src.circuits.run --config configs/part_a_qwen3.5_9b.yaml
 ```
 
 ### 4. Run Part B: Mechanistic Principles Analysis
 ```bash
-python -m src.staged.run --config configs/part_b_qwen8b.yaml
+python -m src.staged.run --config configs/part_b_qwen3.5_9b.yaml
 ```
 
-### 5. Run Unit Tests
+### 5. Run Comparative Baseline Evaluation
+```bash
+bash scripts/run_comparative_baseline.sh
+```
+
+### 6. Run Unit Tests
 ```bash
 python -m unittest discover -s tests
 ```

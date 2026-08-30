@@ -1,9 +1,8 @@
-model_id: "Qwen/Qwen3-14B"
+model_id: "Qwen/Qwen3.5-9B"
 model_source: "huggingface"
 device: "cuda"
-device_map: "auto"
 dtype: "float16"
 n_samples: 500
 prompt_order: "facts_first"
-output_dir: "results/part_b/qwen14b"
+output_dir: "results/part_b/qwen3.5_9b"
 seed: 42

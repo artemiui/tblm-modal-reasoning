@@ -6,15 +6,15 @@ This project extends two foundational mechanistic-interpretability studies of pr
 
 1. **Part A (Circuit Discovery -- Hong et al. 2025 Extension)**:
    - Reference Paper: *A Implies B: Circuit Analysis in LLMs for Propositional Logical Reasoning* (NeurIPS 2025).
-   - Reference Repository: `prop-logic-transformer-circuit-main/`.
+   - Reference Repository: `reference/prop-logic-transformer-circuit-main/`.
    - Core Mechanism: Controlled Mediation Analysis (CMA) circuit discovery focused on **modal propositions** and axioms (without world accessibility clutter), identifying functional attention head families (`QRLH`, `QRMH`, `FPH`, `DH`) plus novel modal families: **Modal-Operator Heads (MOH)**, **Modal-Proposition Heads (MPH)**, and **Connective-Resolving Heads (CRH)**.
-   - Evaluated Models: `Mistral-7B-Instruct-v0.2`, `Gemma-2-9B-it`, `Gemma-2-27B-it`.
+   - Evaluated Model Suite: **`Qwen/Qwen3.5-2B`**, **`Qwen/Qwen3.5-4B`**, **`Qwen/Qwen3.5-9B`**.
 
 2. **Part B (Mechanistic Principles -- Chen et al. 2026 Extension)**:
    - Reference Paper: *Towards a Mechanistic Understanding of Propositional Logical Reasoning in Large Language Models* (2026).
-   - Reference Repository: `anomy_repo_CDSW74VD/`.
-   - Core Mechanism: Macroscopic pattern analysis including 4-region staged computation (Facts, **Accessibility**, Expression, Query), residual-stream information transmission with accessibility boundary and operator tokens, selective fact retrospection (accessible vs. inaccessible contrast), and specialized attention head taxonomy across 11 modal rule/axiom categories (including modal axioms **B, D, 4, and 5**).
-   - Evaluated Models: `Qwen/Qwen3-8B`, `Qwen/Qwen3-14B`.
+   - Reference Repository: `reference/anomy_repo_CDSW74VD/`.
+   - Core Mechanism: Macroscopic pattern analysis including 4-region staged computation (Facts, Accessibility, Expression, Query), residual-stream information transmission with accessibility boundary and operator tokens, selective fact retrospection (accessible vs. inaccessible contrast), and specialized attention head taxonomy across 11 modal rule/axiom categories (including modal axioms **B, D, 4, and 5**).
+   - Evaluated Model Suite: **`Qwen/Qwen3.5-2B`**, **`Qwen/Qwen3.5-4B`**, **`Qwen/Qwen3.5-9B`**.
 
 ---
 
@@ -26,12 +26,13 @@ Modular end-to-end framework implementing both Part A and Part B pipelines:
 ```text
 modal-logic-mi/
 |-- configs/
-|   |-- part_a_mistral7b.yaml      # Part A config for Mistral-7B
-|   |-- part_a_gemma9b.yaml        # Part A config for Gemma-2-9B
-|   |-- part_a_gemma27b.yaml       # Part A config for Gemma-2-27B
-|   |-- part_b_qwen8b.yaml         # Part B config for Qwen3-8B
-|   |-- part_b_qwen14b.yaml        # Part B config for Qwen3-14B
-|   \-- calibration_proplogic.yaml # Propositional baseline calibration
+|   |-- part_a_qwen3.5_2b.yaml     # Part A config for Qwen3.5-2B
+|   |-- part_a_qwen3.5_4b.yaml     # Part A config for Qwen3.5-4B
+|   |-- part_a_qwen3.5_9b.yaml     # Part A config for Qwen3.5-9B
+|   |-- part_b_qwen3.5_2b.yaml     # Part B config for Qwen3.5-2B
+|   |-- part_b_qwen3.5_4b.yaml     # Part B config for Qwen3.5-4B
+|   |-- part_b_qwen3.5_9b.yaml     # Part B config for Qwen3.5-9B
+|   \-- calibration_proplogic.yaml # Propositional baseline calibration (Qwen3.5-9B)
 |-- data/
 |   |-- modal_circuit/             # Part A 6 controlled counterfactual modal proposition prompt pair sets
 |   \-- modal_mi/                  # Part B 1-hop & 2-hop ModalLogic-MI 11-category datasets (incl. Axioms B, D, 4, 5)
@@ -40,9 +41,13 @@ modal-logic-mi/
 |   \-- part_b/{model}/            # MLP staging, retrospection contrast, findings.md
 |-- scripts/
 |   |-- dataset_create.sh          # Dataset generation CLI script
-|   |-- run_part_a_mistral7b.sh    # Part A runner for Mistral-7B
-|   |-- run_part_a_gemma9b.sh      # Part A runner for Gemma-2-9B
-|   |-- run_part_b_qwen8b.sh       # Part B runner for Qwen3-8B
+|   |-- run_part_a_qwen3.5_2b.sh   # Part A runner for Qwen3.5-2B
+|   |-- run_part_a_qwen3.5_4b.sh   # Part A runner for Qwen3.5-4B
+|   |-- run_part_a_qwen3.5_9b.sh   # Part A runner for Qwen3.5-9B
+|   |-- run_part_b_qwen3.5_2b.sh   # Part B runner for Qwen3.5-2B
+|   |-- run_part_b_qwen3.5_4b.sh   # Part B runner for Qwen3.5-4B
+|   |-- run_part_b_qwen3.5_9b.sh   # Part B runner for Qwen3.5-9B
+|   |-- run_comparative_baseline.sh# Comparative test runner (Modal vs. First-Order Propositional)
 |   \-- run_smoke_tests.sh         # Test suite runner
 |-- src/
 |   |-- data_gen/
@@ -122,7 +127,7 @@ modal-logic-transformer-circuit/
   - Rules: `[Rule 1] necessarily P implies Q. [Rule 2] R implies S.`
   - Query: `Query: Is Q necessarily true?`
   - Answer: `Answer: False.`
-- Few-shot sets: 4-shot for Mistral-7B, 6-shot for Gemma-2 (Hong et al. §B.1).
+- Few-shot sets: 4-shot prompt format optimized for Qwen3.5 instruction and base models.
 
 ### A2. 6 Controlled Counterfactual Pairing Regimes
 Strict byte-identical counterfactual surgeries (`src/data_gen/circuit_pairs.py` & `helpers/modal_problem_generation.py`):
@@ -135,9 +140,7 @@ Strict byte-identical counterfactual surgeries (`src/data_gen/circuit_pairs.py` 
 
 ### A3. CMA Patching Engine & GQA Support
 - Implements attention-head output patching ($z$) and sub-component ($q, k, v$) patching (`src/patching/activation_patch.py`, `helpers/patching_helpers_custom.py`).
-- Supports Grouped-Query Attention (GQA):
-  - `Gemma-2-9B` / `Gemma-2-27B`: 2 query heads per KV head (`GQA_constant = 2`).
-  - `Mistral-7B`: 4 query heads per KV head (`GQA_constant = 4`).
+- Supports dynamic Grouped-Query Attention (GQA) group mapping across Qwen3.5 scales (`n_heads // n_kv_heads`).
 - Calibrated Logit Difference Metric (Hong et al. Eq. 1):
   $$\text{cLD} = \frac{\text{LD}_{\text{patched}} - \text{LD}_{\text{corrupted}}}{\text{LD}_{\text{clean}} - \text{LD}_{\text{corrupted}}}$$
 
@@ -201,7 +204,51 @@ Generates 1-hop and 2-hop modal logic samples across 11 fundamental categories (
 
 ---
 
-## 5. Execution and Replication Commands
+## 5. Comparative Evaluation: Modal Logic vs. First-Order Propositional Logic
+
+To quantify how modal logical reasoning mechanically departs from first-order / standard propositional reasoning, we run a side-by-side comparative test across the unified model selection (**`Qwen3.5-2B`**, **`Qwen3.5-4B`**, and **`Qwen3.5-9B`**) using the original reference implementations alongside our modal logic implementations:
+
+### Comparative Framework Overview
+
+| Dimension | Standard / First-Order Propositional Logic | Modal Propositional Logic | Reference Implementations |
+|:---|:---|:---|:---|
+| **Underlying Semantics** | Boolean truth assignments ($V: P \to \{0,1\}$) | Kripke frame $\langle W, R, V \rangle$ & Modal Axioms (B, D, 4, 5, K, T) | `reference/prop-logic-transformer-circuit-main/` vs `modal-logic-transformer-circuit/` |
+| **Circuit Family Count (Part A)** | **4 Core Families**: QRLH, FPH, QRMH, DH | **7 Families**: QRLH, **MOH**, **MPH**, **CRH**, FPH, QRMH, DH | Hong et al. (2025) vs `modal-logic-mi/src/circuits/` |
+| **Staged Computation (Part B)** | **3 Regions**: Facts $\to$ Expression $\to$ Query | **4 Regions**: Facts $\to$ **Accessibility** $\to$ Expression $\to$ Query | Chen et al. (2026) vs `modal-logic-mi/src/staged/` |
+| **Information Transmission** | Linear variable transmission to `expr_last` | Operator-gated transmission (Box/Diamond/Axiom tokens) | `anomy_repo_CDSW74VD/` vs `modal-logic-mi/src/staged/` |
+| **Fact Retrospection** | Uniform premise fact retrieval | Modally gated retrospection ($\text{Acc} \gg \text{Inacc}$) | `anomy_repo_CDSW74VD/` vs `modal-logic-mi/src/staged/` |
+
+### Comparative Test Protocols
+
+#### 1. Circuit Overhead & Functional Differentiation Test (Part A)
+- **Objective**: Measure the circuit size expansion and head specialization when transitioning from propositional chains ($A \to B \to C$) to modal propositional chains ($\Box A \to \Diamond B$).
+- **Test Protocol**:
+  1. Run propositional circuit search on `reference/prop-logic-transformer-circuit-main/` using `Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B`.
+  2. Run modal proposition circuit search on `modal-logic-mi/` using `Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B`.
+  3. Compare:
+     - Active head count required to achieve $>80\%$ sufficiency.
+     - Distribution of Indirect Effects ($\text{IE}$) across layer depth.
+     - Emergence of specialized `MOH` and `MPH` heads in middle layers ($L/3$ to $2L/3$).
+
+#### 2. Macroscopic Staging Divergence Test (Part B)
+- **Objective**: Quantify layer-wise computation shifts between 3-region propositional logic and 4-region modal logic.
+- **Test Protocol**:
+  1. Run MLP region zero/mean ablation on `reference/anomy_repo_CDSW74VD/` (Facts, Expression, Query) on `Qwen3.5-2B`, `4B`, `9B`.
+  2. Run 4-region MLP ablation on `modal-logic-mi/` (Facts, Accessibility, Expression, Query) on `Qwen3.5-2B`, `4B`, `9B`.
+  3. Compare:
+     - Band Concentration Ratio ($BCR$) and Band Mean Impact ($BMI$).
+     - Peak causal layer for premise resolution (standard facts peak in early-to-mid layers; accessibility/modal constraints peak in mid-to-late layers).
+
+#### 3. Cross-Scale Model Scaling Test (2B $\to$ 4B $\to$ 9B)
+- **Objective**: Test how circuit modularity and head specialization scale with parameter size.
+- **Metrics Tracked**:
+  - `cLD` retention on Full Circuit vs Ablated Families.
+  - Retrospection contrast ratio: $\text{Ratio} = \frac{\text{Mean}|dPD|_{\text{accessible}}}{\text{Mean}|dPD|_{\text{inaccessible}}}$.
+  - Modal operator sensitivity selectivity ratio: $\text{Mass}_{\text{target}} / \text{Mass}_{\text{distractor}}$.
+
+---
+
+## 6. Execution and Replication Commands
 
 ### 1. Dataset Generation
 ```bash
@@ -209,28 +256,32 @@ Generates 1-hop and 2-hop modal logic samples across 11 fundamental categories (
 bash scripts/dataset_create.sh
 ```
 
-### 2. Part A Circuit Discovery Execution
+### 2. Part A Circuit Discovery Execution (Qwen3.5 Suite)
 ```bash
 # In modal-logic-mi/
-python -m src.circuits.run --config configs/part_a_mistral7b.yaml
-python -m src.circuits.run --config configs/part_a_gemma9b.yaml
-python -m src.circuits.run --config configs/part_a_gemma27b.yaml
+python -m src.circuits.run --config configs/part_a_qwen3.5_2b.yaml
+python -m src.circuits.run --config configs/part_a_qwen3.5_4b.yaml
+python -m src.circuits.run --config configs/part_a_qwen3.5_9b.yaml
 
 # In modal-logic-transformer-circuit/
-python scripts/run_patching_sweep.py --model_id google/gemma-2-9b-it
+python scripts/run_patching_sweep.py --model_id Qwen/Qwen3.5-9B
 python scripts/run_attention_analysis.py
 python scripts/run_circuit_verification.py
 ```
 
-### 3. Part B Mechanistic Principles Execution
+### 3. Part B Mechanistic Principles Execution (Qwen3.5 Suite)
 ```bash
 # In modal-logic-mi/
-python -m src.staged.run --config configs/part_b_qwen8b.yaml
-python -m src.staged.run --config configs/part_b_qwen14b.yaml
+python -m src.staged.run --config configs/part_b_qwen3.5_2b.yaml
+python -m src.staged.run --config configs/part_b_qwen3.5_4b.yaml
+python -m src.staged.run --config configs/part_b_qwen3.5_9b.yaml
 ```
 
-### 4. Running Test Suites
+### 4. Running Comparative Baseline & Verification Suites
 ```bash
+# Run side-by-side comparative baseline test (Modal vs First-Order Propositional)
+bash modal-logic-mi/scripts/run_comparative_baseline.sh
+
 # Run all unit tests for modal-logic-mi (20 tests)
 python -m unittest discover -s tests
 
@@ -240,11 +291,12 @@ python -m unittest discover -s tests
 
 ---
 
-## 6. Definition of Done & Quality Checklist
+## 7. Definition of Done & Quality Checklist
 
+- [x] **Unified Model Selection**: Model selection focused on `Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B` across all configs, scripts, and comparative pipelines.
+- [x] **Comparative Test Suite**: Formalized comparison protocol between original propositional logic baselines (`reference/prop-logic-transformer-circuit-main/`, `reference/anomy_repo_CDSW74VD/`) and our modal logic framework.
 - [x] **Part A Modal Proposition Circuit Discovery**: Full pipeline adapted from Hong et al. focusing on modal propositions and axioms, supporting MOH, MPH, CRH, QRLH, QRMH, FPH, DH, GQA handling, and sufficiency tables.
 - [x] **Part B Modal Staged Principles with Axioms B, D, 4, 5**: Full pipeline adapted from Chen et al., supporting 4-region MLP staging, token-wise transmission, accessible vs. inaccessible fact retrospection contrast, and 11 rule & axiom categories (incorporating Axioms B, D, 4, and 5 with `cross_world_composition` removed).
 - [x] **Systematic Boolean Connectives under Modality**: Boolean connectives under modal context (`and`, `or`, `xor`, `iff`, `not`) fully supported in AST, recursive evaluators, counterfactual pairing, and head classification.
-- [x] **Standalone High-Fidelity Clone**: `modal-logic-transformer-circuit` created as a self-contained clone of `prop-logic-transformer-circuit-main` with modal proposition and axiom support.
 - [x] **Unit & Integration Tests**: All 29 unit tests (20 in `modal-logic-mi`, 9 in `modal-logic-transformer-circuit`) passing cleanly.
 - [x] **Documentation & Hygiene**: Complete READMEs, findings reports, requirements, and configuration files provided.

@@ -5,7 +5,7 @@
 This repository contains a full adaptation and extension of the NeurIPS 2025 paper **[A Implies B: Circuit Analysis in LLMs for Propositional Logical Reasoning](https://arxiv.org/pdf/2411.04105)** (Hong et al., 2025) to **Modal Logic** ($\Box$ necessity, $\Diamond$ possibility, modal propositions, and modal axioms **B, D, 4, 5, K, T**).
 
 ### About This Work
-We investigate how Large Language Models (`Gemma-2-9B`, `Gemma-2-27B`, and `Mistral-7B-v0.1`) execute modal reasoning over modal propositions and axioms:
+We investigate how Large Language Models (`Qwen3.5-2B`, `Qwen3.5-4B`, and `Qwen3.5-9B`) execute modal reasoning over modal propositions and axioms:
 - **Modal Propositions & Axioms**: Evaluating modal propositions such as $\Box(P \to Q)$, $\Diamond(P \to Q)$, and modal axioms **B, D, 4, 5, K, T**.
 - **Controlled Mediation Analysis (CMA)**: Conducting strict byte-identical counterfactual surgeries across 6 pairing regimes (`query_flip`, `modal_operator_flip`, `modal_proposition_flip`, `fact_flip`, `rule_location_swap`, `connective_flip`).
 - **Discovered Attention Head Families**:
@@ -24,7 +24,7 @@ We investigate how Large Language Models (`Gemma-2-9B`, `Gemma-2-27B`, and `Mist
 | Component | Status | Details |
 |:---|:---:|:---|
 | **Modal Problem Generation** | **COMPLETE** | Generates modal proposition chains, few-shot prompts, and 6 controlled counterfactual pairing functions (incl. connective and modal proposition modes). |
-| **Patching Engine & GQA** | **COMPLETE** | Layer-by-head sweep for components ($z, q, k, v$) with GQA mapping (Gemma-2: 2, Mistral-7B: 4). |
+| **Patching Engine & GQA** | **COMPLETE** | Layer-by-head sweep for components ($z, q, k, v$) with dynamic GQA mapping across Qwen3.5 scales. |
 | **Attention Analysis** | **COMPLETE** | Automated marker/clause span extraction and attention statistics with MPH specificity check. |
 | **Circuit Verification** | **COMPLETE** | Complement-patching hooks (`add_ctfl_ablation_hook`) for full circuit and family-wise ablations (incl. MPH, CRH). |
 | **Walkthrough Notebook** | **COMPLETE** | Interactive Jupyter walkthrough in `analysis_walkthrough/` ready for experimentation. |
@@ -81,7 +81,7 @@ jupyter notebook "analysis_walkthrough/LLM Analysis Part 1 Modal Circuit search,
 ### 3. Running Automated Scripts
 ```bash
 # Run CMA Patching Sweep
-python scripts/run_patching_sweep.py --model_id google/gemma-2-9b-it --n_samples 30
+python scripts/run_patching_sweep.py --model_id Qwen/Qwen3.5-9B --n_samples 30
 
 # Run Attention Analysis & Specificity Verification
 python scripts/run_attention_analysis.py
