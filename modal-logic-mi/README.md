@@ -18,13 +18,13 @@ This repository extends two foundational mechanistic interpretability studies of
 
 | Component | Status | Details & Metrics |
 |:---|:---:|:---|
-| **Data Generation (Part B)** | **COMPLETE** | 1,000 samples generated (`facts_first`), 1,000 samples (`expr_first`), 10 rule categories (incl. graded majority & disjunctions), 50% 1-hop / 50% 2-hop, fact and accessibility corruptions. |
-| **Data Generation (Part A)** | **COMPLETE** | Controlled counterfactual pairs generated across 7 flip modes (query, operator $\\Box\\leftrightarrow\\Diamond$, accessibility, fact, rule swap, graded operator `probably` $\\leftrightarrow$ `certainly`, and connective `or` $\\leftrightarrow$ `and`). |
+| **Data Generation (Part B)** | **COMPLETE** | 1,000 samples generated (`facts_first`), 1,000 samples (`expr_first`), 8 rule categories (incl. modal disjunctions & connectives), 50% 1-hop / 50% 2-hop, fact and accessibility corruptions. |
+| **Data Generation (Part A)** | **COMPLETE** | Controlled counterfactual pairs generated across 6 flip modes (query, operator $\\Box\\leftrightarrow\\Diamond$, accessibility, fact, rule swap, and connective `or` $\\leftrightarrow$ `and`). |
 | **Patching Engine & Metrics** | **COMPLETE** | Residual stream, MLP zero/mean ablation, attention head output ($z$), and sub-component ($q, k, v$) patching with GQA group handling. |
-| **Part A Circuit Discovery** | **COMPLETE** | CMA necessity sweep, head classification (QRLH, MOH, WAH, CRH, GMH, FPH, QRMH, DH), and complement patching sufficiency table generator. |
+| **Part A Circuit Discovery** | **COMPLETE** | CMA necessity sweep, head classification (QRLH, MOH, WAH, CRH, FPH, QRMH, DH), and complement patching sufficiency table generator. |
 | **Part B Staged Computation** | **COMPLETE** | 4-region MLP staging, token-wise transmission, accessible vs inaccessible fact retrospection contrast ($accessible \\gg inaccessible$), and Accessibility-Filtering Heads. |
 | **Visualizations & Plots** | **COMPLETE** | Publication-grade circuit diagrams, 2D layer-by-head/token heatmaps, and stage bar charts with SEM error bars. |
-| **Unit & Integration Tests** | **PASSED** | 22/22 tests passing across grammar, graded semantics, pairing functions, metrics, corruptions, staging, and head taxonomies. |
+| **Unit & Integration Tests** | **PASSED** | 20/20 tests passing across grammar, modal semantics, pairing functions, metrics, corruptions, staging, and head taxonomies. |
 
 ---
 

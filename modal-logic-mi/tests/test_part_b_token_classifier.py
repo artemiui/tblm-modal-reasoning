@@ -12,10 +12,10 @@ class TestPartBTokenClassifier(unittest.TestCase):
         self.assertIn("operator", cats)
         self.assertIn("query_token", cats)
 
-        # Verify graded and connective tokens
-        graded_tokens = ["probably", "certainly", "xor"]
-        graded_cats = classify_modal_tokens(graded_tokens)
-        for c in graded_cats:
+        # Verify connective and modal operator tokens
+        connective_tokens = ["xor", "iff", "and"]
+        connective_cats = classify_modal_tokens(connective_tokens)
+        for c in connective_cats:
             self.assertIn(c, {"operator", "expr_last"})
 
 

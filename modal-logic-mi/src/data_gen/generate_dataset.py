@@ -33,7 +33,7 @@ def main() -> None:
                 f.write(json.dumps(row, ensure_ascii=True) + "\n")
         log_event(logger, {"dataset_type": "modal_mi", "count": len(rows), "output": str(args.output)})
     else:
-        pairs = generate_all_circuit_pairs(n_per_type=max(1, args.n_samples // 7), seed=args.seed)
+        pairs = generate_all_circuit_pairs(n_per_type=max(1, args.n_samples // 6), seed=args.seed)
         rows = [
             {
                 "pair_type": p.pair_type,

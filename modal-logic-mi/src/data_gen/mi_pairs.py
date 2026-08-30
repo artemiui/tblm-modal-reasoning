@@ -4,8 +4,8 @@ import random
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Sequence, Tuple
 from .modal_grammar import (
-    And, Box, Certainly, Const, Diamond, Expr, Iff, Implies, KripkeFrame, KripkeModel,
-    Not, Or, Probably, Unlikely, Var, Xor, eval_modal_expr, to_symbolic
+    And, Box, Const, Diamond, Expr, Iff, Implies, KripkeFrame, KripkeModel,
+    Not, Or, Var, Xor, eval_modal_expr, to_symbolic
 )
 from .formatters import build_modal_mi_prompt
 from .corruptions import (
@@ -96,30 +96,6 @@ def _build_modal_commutative_associative(rng: random.Random) -> Tuple[Expr, Krip
     return expr, KripkeModel(frame, val), "w0"
 
 
-def _build_graded_majority(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
-    frame = KripkeFrame(
-        worlds=["w0", "w1", "w2"],
-        accessibility={"w0": ["w0", "w1", "w2"]}
-    )
-    val = {
-        "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-        "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-        "w2": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-    }
-    expr = Probably(Var("P"))
-    return expr, KripkeModel(frame, val), "w0"
-
-
-def _build_epistemic_certainty(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
-    frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"]})
-    val = {
-        "w0": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-        "w1": {"P": bool(rng.getrandbits(1)), "Q": bool(rng.getrandbits(1))},
-    }
-    expr = Certainly(Implies(Var("P"), Var("Q")))
-    return expr, KripkeModel(frame, val), "w0"
-
-
 def _build_connective_disjunction(rng: random.Random) -> Tuple[Expr, KripkeModel, str]:
     frame = KripkeFrame(worlds=["w0", "w1"], accessibility={"w0": ["w0", "w1"]})
     val = {
@@ -138,8 +114,6 @@ MODAL_RULE_CATEGORIES: List[ModalRuleCategory] = [
     ModalRuleCategory("k_axiom", "\u25a1(P -> Q) -> (\u25a1P -> \u25a1Q)", _build_k_axiom),
     ModalRuleCategory("cross_world_composition", "\u25a1\u25a1P composition", _build_cross_world_composition),
     ModalRuleCategory("modal_commutative_associative", "\u25a1(P and Q) <-> \u25a1P and \u25a1Q", _build_modal_commutative_associative),
-    ModalRuleCategory("graded_majority", "probably P (>50% worlds)", _build_graded_majority),
-    ModalRuleCategory("epistemic_certainty", "certainly(P -> Q)", _build_epistemic_certainty),
     ModalRuleCategory("connective_disjunction", "\u25a1(P or Q)", _build_connective_disjunction),
 ]
 

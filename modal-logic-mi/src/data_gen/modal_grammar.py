@@ -56,21 +56,6 @@ def Diamond(x: Expr) -> Expr:
     return Expr(op="diamond", children=(x,))
 
 
-def Probably(x: Expr) -> Expr:
-    """Graded Epistemic / Modal Probability operator (>50% of accessible worlds)."""
-    return Expr(op="probably", children=(x,))
-
-
-def Certainly(x: Expr) -> Expr:
-    """Graded Epistemic / Modal Certainty operator (100% of accessible worlds)."""
-    return Expr(op="certainly", children=(x,))
-
-
-def Unlikely(x: Expr) -> Expr:
-    """Graded Epistemic / Modal Improbability operator (<50% of accessible worlds)."""
-    return Expr(op="unlikely", children=(x,))
-
-
 @dataclass
 class KripkeFrame:
     worlds: List[str] = field(default_factory=lambda: ["w0", "w1"])
@@ -127,7 +112,7 @@ def eval_modal_expr(expr: Expr, model: KripkeModel, current_world: str = "w0") -
         if expr.op == "iff":
             return left == right
 
-    if expr.op in {"box", "certainly"}:
+    if expr.op == "box":
         acc_worlds = model.frame.accessible_from(current_world)
         if not acc_worlds:
             return True  # Vacuously true if no accessible worlds
@@ -138,20 +123,6 @@ def eval_modal_expr(expr: Expr, model: KripkeModel, current_world: str = "w0") -
         if not acc_worlds:
             return False  # False if no accessible worlds
         return any(eval_modal_expr(expr.children[0], model, w) for w in acc_worlds)
-
-    if expr.op == "probably":
-        acc_worlds = model.frame.accessible_from(current_world)
-        if not acc_worlds:
-            return False
-        true_count = sum(1 for w in acc_worlds if eval_modal_expr(expr.children[0], model, w))
-        return (true_count / len(acc_worlds)) > 0.5
-
-    if expr.op == "unlikely":
-        acc_worlds = model.frame.accessible_from(current_world)
-        if not acc_worlds:
-            return True
-        true_count = sum(1 for w in acc_worlds if eval_modal_expr(expr.children[0], model, w))
-        return (true_count / len(acc_worlds)) < 0.5
 
     raise ValueError(f"Unknown operator {expr.op!r}")
 
@@ -192,9 +163,6 @@ _PRECEDENCE = {
     "not": 5,
     "box": 5,
     "diamond": 5,
-    "certainly": 5,
-    "probably": 5,
-    "unlikely": 5,
     "var": 6,
     "const": 6,
 }
@@ -223,15 +191,6 @@ def to_symbolic(expr: Expr) -> str:
     if expr.op == "diamond":
         inner = expr.children[0]
         return f"diamond({to_symbolic(inner)})"
-    if expr.op == "certainly":
-        inner = expr.children[0]
-        return f"certainly({to_symbolic(inner)})"
-    if expr.op == "probably":
-        inner = expr.children[0]
-        return f"probably({to_symbolic(inner)})"
-    if expr.op == "unlikely":
-        inner = expr.children[0]
-        return f"unlikely({to_symbolic(inner)})"
 
     left, right = expr.children
     if expr.op == "and":
@@ -258,12 +217,6 @@ def to_natural(expr: Expr) -> str:
         return f"necessarily {to_natural(expr.children[0])}"
     if expr.op == "diamond":
         return f"possibly {to_natural(expr.children[0])}"
-    if expr.op == "certainly":
-        return f"certainly {to_natural(expr.children[0])}"
-    if expr.op == "probably":
-        return f"probably {to_natural(expr.children[0])}"
-    if expr.op == "unlikely":
-        return f"unlikely {to_natural(expr.children[0])}"
 
     left, right = expr.children
     if expr.op == "and":

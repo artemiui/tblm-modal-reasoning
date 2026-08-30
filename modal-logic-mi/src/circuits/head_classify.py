@@ -30,7 +30,6 @@ def classify_heads(
         "MOH": [],
         "WAH": [],
         "CRH": [],
-        "GMH": [],
         "QRLH": [],
         "QRMH": [],
         "FPH": [],
@@ -56,10 +55,6 @@ def classify_heads(
         crh_pairs = pairs_by_type.get("connective_flip", [])
         crh_score = _eval_pair_effect(model, l, h, crh_pairs, true_id, false_id)
 
-        # Test GMH: Graded modal operator flip effect (probably <-> certainly)
-        gmh_pairs = pairs_by_type.get("graded_operator_flip", [])
-        gmh_score = _eval_pair_effect(model, l, h, gmh_pairs, true_id, false_id)
-
         # Test FPH: Fact flip effect
         fact_pairs = pairs_by_type.get("fact_flip", [])
         fph_score = _eval_pair_effect(model, l, h, fact_pairs, true_id, false_id)
@@ -72,8 +67,6 @@ def classify_heads(
             families["WAH"].append((l, h))
         elif crh_score > 0.15:
             families["CRH"].append((l, h))
-        elif gmh_score > 0.15:
-            families["GMH"].append((l, h))
         elif fph_score > 0.15:
             families["FPH"].append((l, h))
         elif l < n_layers // 3:

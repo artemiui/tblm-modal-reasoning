@@ -25,7 +25,6 @@ class TestCircuits(unittest.TestCase):
         self.assertIn("MOH", families)
         self.assertIn("WAH", families)
         self.assertIn("CRH", families)
-        self.assertIn("GMH", families)
         self.assertIn("QRLH", families)
         self.assertIn("QRMH", families)
         self.assertIn("FPH", families)

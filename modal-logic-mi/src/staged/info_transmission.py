@@ -39,7 +39,7 @@ def classify_modal_tokens(str_tokens: Sequence[str]) -> List[str]:
             categories.append("accessibility_boundary")
         elif clean in {"true", "false"}:
             categories.append("facts_value")
-        elif clean in {"box", "diamond", "necessarily", "possibly", "probably", "certainly", "unlikely", "and", "or", "xor", "iff", "implies", "not"}:
+        elif clean in {"box", "diamond", "necessarily", "possibly", "and", "or", "xor", "iff", "implies", "not"}:
             categories.append("operator")
         elif clean in {"p", "q", "r", "s", "a", "b", "c", "d"}:
             categories.append("variable_in_expr")
