@@ -12,10 +12,10 @@ from .io_utils import balanced_sample_by_rule, read_jsonl, write_jsonl
 _BOOL_RE = re.compile(r'\b(true|false)\b', re.IGNORECASE)
 
 def _parse_bool(text: str) -> Optional[bool]:
-    m = _BOOL_RE.search(text)
-    if not m:
+    matches = _BOOL_RE.findall(text)
+    if not matches:
         return None
-    return m.group(1).lower() == 'true'
+    return matches[-1].lower() == 'true'
 
 def _resolve_prompt(row: Dict[str, object], prompt_style: str, kind: str, mode: str) -> str:
     prompt_key = f"{kind}_prompt_{prompt_style}"
