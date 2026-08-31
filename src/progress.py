@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 
 def resolve_log_path(output_path: Path) -> Path:
