@@ -52,8 +52,15 @@ def main() -> None:
         from .inference_hf_api import create_inference_client
         client = create_inference_client(args.model_id, token=args.hf_token, max_new_tokens=args.max_new_tokens)
     else:
-        # Placeholder for local loading
-        client = None
+        import torch
+        from transformers import pipeline
+        print(f"Loading local model {args.model_id} on Colab GPU...")
+        client = pipeline(
+            "text-generation", 
+            model=args.model_id, 
+            model_kwargs={"torch_dtype": torch.float16}, 
+            device_map="auto"
+        )
 
     results = []
     for row in rows:
@@ -64,8 +71,21 @@ def main() -> None:
             pred_clean, raw_clean = client.predict_chat(prompt_clean, temperature=args.temperature)
             pred_corrupted, raw_corrupted = client.predict_chat(prompt_corrupted, temperature=args.temperature)
         else:
-            pred_clean, raw_clean = None, ""
-            pred_corrupted, raw_corrupted = None, ""
+            # Local Inference
+            def _local_predict(prompt: str) -> Tuple[Optional[bool], str]:
+                messages = [{"role": "user", "content": prompt}]
+                do_sample = args.temperature > 0
+                out = client(
+                    messages, 
+                    max_new_tokens=args.max_new_tokens, 
+                    temperature=args.temperature if do_sample else None, 
+                    do_sample=do_sample
+                )
+                raw_text = out[0]['generated_text'][-1]['content']
+                return _parse_bool(raw_text), raw_text
+
+            pred_clean, raw_clean = _local_predict(prompt_clean)
+            pred_corrupted, raw_corrupted = _local_predict(prompt_corrupted)
             
         row_out = dict(row)
         row_out.update({
