@@ -17,19 +17,17 @@ def _parse_bool(text: str) -> Optional[bool]:
         return None
     return m.group(1).lower() == 'true'
 
-def _rebuild_prompt_from_row(row: Dict[str, object], prompt_style: str, kind: str, mode: str) -> str:
-    if 'frame' in row:
-        from src.data.formatters import build_modal_prompt
-        return build_modal_prompt(row, prompt_style=prompt_style, mode=mode, kind=kind)
-    else:
-        from src.data.formatters import build_prop_prompt
-        return build_prop_prompt(row, prompt_style=prompt_style, mode=mode, kind=kind)
-
 def _resolve_prompt(row: Dict[str, object], prompt_style: str, kind: str, mode: str) -> str:
-    prompt_key = 'prompt' if kind == 'clean' else 'prompt_corrupted'
+    prompt_key = f"{kind}_prompt_{prompt_style}"
     if prompt_key in row:
         return str(row[prompt_key])
-    return _rebuild_prompt_from_row(row, prompt_style, kind, mode)
+    
+    # Fallback to symbolic if the specific style wasn't pre-generated
+    fallback_key = f"{kind}_prompt_symbolic"
+    if fallback_key in row:
+        return str(row[fallback_key])
+        
+    raise ValueError(f"Could not find prompt key {prompt_key} or {fallback_key} in row")
 
 def main() -> None:
     parser = argparse.ArgumentParser()
