@@ -1,0 +1,35 @@
+# Model registry for Modal Logic MI experiments
+# All models are loaded via HuggingFace
+
+models:
+  - name: Qwen3-0.6B
+    model_id: Qwen/Qwen3-0.6B
+    parameters: 0.6B
+    backend: api
+    notes: Smallest model, baseline for scaling analysis
+
+  - name: Qwen3-1.7B
+    model_id: Qwen/Qwen3-1.7B
+    parameters: 1.7B
+    backend: api
+    notes: Small model, may support local CPU inference for mech analysis
+
+  - name: Qwen3-4B
+    model_id: Qwen/Qwen3-4B
+    parameters: 4B
+    backend: api
+    notes: Medium model
+
+  - name: Qwen3-8B
+    model_id: Qwen/Qwen3-8B
+    parameters: 8B
+    backend: api
+    notes: Largest model, primary target for mech analysis
+
+defaults:
+  backend: api
+  model_source: huggingface
+  prompt_style: symbolic
+  mode: nocot
+  max_new_tokens: 8
+  temperature: 0.0

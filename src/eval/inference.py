@@ -1,0 +1,90 @@
+from __future__ import annotations
+
+import argparse
+import re
+import time
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+from src.progress import log_event, make_tqdm, resolve_log_path, setup_file_logger
+from .io_utils import balanced_sample_by_rule, read_jsonl, write_jsonl
+
+_BOOL_RE = re.compile(r'\b(true|false)\b', re.IGNORECASE)
+
+def _parse_bool(text: str) -> Optional[bool]:
+    m = _BOOL_RE.search(text)
+    if not m:
+        return None
+    return m.group(1).lower() == 'true'
+
+def _rebuild_prompt_from_row(row: Dict[str, object], prompt_style: str, kind: str, mode: str) -> str:
+    if 'frame' in row:
+        from src.data.formatters import build_modal_prompt
+        return build_modal_prompt(row, prompt_style=prompt_style, mode=mode, kind=kind)
+    else:
+        from src.data.formatters import build_prop_prompt
+        return build_prop_prompt(row, prompt_style=prompt_style, mode=mode, kind=kind)
+
+def _resolve_prompt(row: Dict[str, object], prompt_style: str, kind: str, mode: str) -> str:
+    prompt_key = 'prompt' if kind == 'clean' else 'prompt_corrupted'
+    if prompt_key in row:
+        return str(row[prompt_key])
+    return _rebuild_prompt_from_row(row, prompt_style, kind, mode)
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_id', required=True)
+    parser.add_argument('--input', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--prompt_style', choices=['symbolic', 'semi_natural', 'verbose'], default='symbolic')
+    parser.add_argument('--mode', choices=['nocot', 'cot'], default='nocot')
+    parser.add_argument('--max_new_tokens', type=int, default=8)
+    parser.add_argument('--temperature', type=float, default=0.0)
+    parser.add_argument('--max_samples', type=int, default=0)
+    parser.add_argument('--backend', choices=['api', 'local'], default='api')
+    parser.add_argument('--hf_token', type=str, default=None)
+    parser.add_argument('--progress_every', type=int, default=50)
+    args = parser.parse_args()
+
+    rows = read_jsonl(args.input)
+    if args.max_samples > 0:
+        rows = balanced_sample_by_rule(rows, args.max_samples)
+
+    if args.backend == 'api':
+        from .inference_hf_api import create_inference_client
+        client = create_inference_client(args.model_id, token=args.hf_token, max_new_tokens=args.max_new_tokens)
+    else:
+        # Placeholder for local loading
+        client = None
+
+    results = []
+    for row in rows:
+        prompt_clean = _resolve_prompt(row, args.prompt_style, 'clean', args.mode)
+        prompt_corrupted = _resolve_prompt(row, args.prompt_style, 'corrupted', args.mode)
+        
+        if args.backend == 'api' and client is not None:
+            pred_clean, raw_clean = client.predict_chat(prompt_clean, temperature=args.temperature)
+            pred_corrupted, raw_corrupted = client.predict_chat(prompt_corrupted, temperature=args.temperature)
+        else:
+            pred_clean, raw_clean = None, ""
+            pred_corrupted, raw_corrupted = None, ""
+            
+        row_out = dict(row)
+        row_out.update({
+            'pred_clean': pred_clean,
+            'pred_corrupted': pred_corrupted,
+            'raw_clean': raw_clean,
+            'raw_corrupted': raw_corrupted,
+            'correct_clean': pred_clean == row['label'] if pred_clean is not None else False,
+            'correct_corrupted': pred_corrupted == row['label_corrupted'] if pred_corrupted is not None else False,
+            'eval_mode': args.mode,
+            'prompt_style': args.prompt_style,
+            'model_id': args.model_id,
+            'backend': args.backend
+        })
+        results.append(row_out)
+
+    write_jsonl(args.output, results)
+
+if __name__ == '__main__':
+    main()

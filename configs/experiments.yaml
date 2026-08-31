@@ -1,0 +1,53 @@
+# Experiment configurations for Modal Logic MI
+
+experiment_groups:
+  # Group 1: Propositional Baseline
+  propositional_baseline:
+    mode: propositional
+    per_rule_per_hop: 200
+    prompt_orders: [facts_first, expr_first]
+    seed: 42
+    models: [Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B]
+
+  # Group 2: Modal Per-Axiom
+  modal_per_axiom:
+    mode: modal
+    per_axiom_per_hop: 200
+    n_worlds: 3
+    axioms: [axiom_K, axiom_T, axiom_D, axiom_4, axiom_5, axiom_B,
+             modal_duality_box, modal_duality_diamond, modal_modus_ponens,
+             necessitation, box_and_distribution, diamond_or_distribution]
+    seed: 42
+    models: [Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B]
+
+  # Group 3: Modal Systems
+  modal_systems:
+    mode: modal
+    systems:
+      - name: K
+        axioms: [axiom_K]
+      - name: KT
+        axioms: [axiom_K, axiom_T]
+      - name: S4
+        axioms: [axiom_K, axiom_T, axiom_4]
+      - name: S5
+        axioms: [axiom_K, axiom_T, axiom_5]
+      - name: KD
+        axioms: [axiom_K, axiom_D]
+      - name: KD45
+        axioms: [axiom_K, axiom_D, axiom_4, axiom_5]
+      - name: KB
+        axioms: [axiom_K, axiom_B]
+    per_system: 300
+    n_worlds: 3
+    seed: 42
+    models: [Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B]
+
+  # Group 4: Scaling Analysis
+  scaling:
+    mode: modal
+    world_counts: [2, 3, 4, 5]
+    nesting_depths: [1, 2, 3]
+    per_condition: 200
+    seed: 42
+    models: [Qwen3-0.6B, Qwen3-1.7B, Qwen3-4B, Qwen3-8B]

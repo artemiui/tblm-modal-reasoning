@@ -1,3 +1,0 @@
-1. Run Part A Circuit Discovery (e.g. python -m src.circuits.run --config configs/part_a_mistral7b.yaml or Gemma-2-
-  9B).
-2. Run Part B Staged Computation Analysis (e.g. python -m src.staged.run --config configs/part_b_qwen8b.yaml).

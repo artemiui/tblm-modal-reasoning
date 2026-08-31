@@ -1,9 +1,0 @@
-model_id: "Qwen/Qwen3.5-2B"
-model_source: "huggingface"
-device: "cuda"
-dtype: "float16"
-samples_per_type: 60
-few_shot_style: "4shot"
-threshold: 0.05
-output_dir: "results/part_a/qwen3.5_2b"
-seed: 42
