@@ -63,7 +63,7 @@ def main() -> None:
         )
 
     results = []
-    for row in rows:
+    for row in make_tqdm(rows, desc=f"Evaluating {args.model_id}"):
         prompt_clean = _resolve_prompt(row, args.prompt_style, 'clean', args.mode)
         prompt_corrupted = _resolve_prompt(row, args.prompt_style, 'corrupted', args.mode)
         
