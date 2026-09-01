@@ -42,6 +42,7 @@ def main() -> None:
     parser.add_argument('--backend', choices=['api', 'local'], default='api')
     parser.add_argument('--hf_token', type=str, default=None)
     parser.add_argument('--progress_every', type=int, default=50)
+    parser.add_argument('--reasoning', type=lambda x: str(x).lower() == 'true', default=True)
     args = parser.parse_args()
 
     rows = read_jsonl(args.input)
@@ -87,6 +88,12 @@ def main() -> None:
             pred_clean, raw_clean = _local_predict(prompt_clean)
             pred_corrupted, raw_corrupted = _local_predict(prompt_corrupted)
             
+        if getattr(args, 'reasoning', True) is False:
+            raw_clean = re.sub(r'<think>.*?(?:</think>|$)', '', raw_clean, flags=re.DOTALL).strip()
+            raw_corrupted = re.sub(r'<think>.*?(?:</think>|$)', '', raw_corrupted, flags=re.DOTALL).strip()
+            pred_clean = _parse_bool(raw_clean)
+            pred_corrupted = _parse_bool(raw_corrupted)
+
         row_out = dict(row)
         row_out.update({
             'pred_clean': pred_clean,
